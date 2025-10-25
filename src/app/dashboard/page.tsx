@@ -1,6 +1,7 @@
 // src/app/dashboard/page.tsx
 'use client';
 
+import ZolarusAssistant from '@/components/ZolarusAssistant';
 import * as React from 'react';
 import { Suspense } from 'react';
 import Link from 'next/link';
@@ -478,4 +479,6 @@ function CardTitle({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+<ZolarusAssistant />
+
 }
