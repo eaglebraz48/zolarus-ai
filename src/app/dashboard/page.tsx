@@ -430,7 +430,7 @@ function SoonBadge({ lang }: { lang: Lang }) {
 
   const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
   const top  = vw >= 1200 ? 160 : vw >= 900 ? 200 : 235;
-  const left = vw >= 1200 ? '26%' : vw >= 900 ? '30%' : '20%';
+  const left = vw >= 1200 ? '40%' : vw >= 900 ? '50%' : '40%';
 
 
   return (
