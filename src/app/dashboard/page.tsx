@@ -428,9 +428,11 @@ function SoonBadge({ lang }: { lang: Lang }) {
   // - extra small (< 740): hide to avoid crowding
   if (vw < 740) return null;
 
-  const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-  const top  = vw >= 1200 ? 160 : vw >= 900 ? 200 : 235;
-  const left = vw >= 1200 ? '40%' : vw >= 900 ? '50%' : '40%';
+  // Position + size rules
+const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+const top  = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;  // a bit lower for balance
+const left = vw >= 1200 ? '16%' : vw >= 900 ? '14%' : '12%'; // move ~6% back left
+
 
 
   return (
