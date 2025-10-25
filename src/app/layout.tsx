@@ -3,9 +3,10 @@ import './globals.css';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import ChatWidget from '@/components/ChatWidget';
+
 import Header from '@/components/Header';
-import PWARegister from './PWARegister';
+import ChatWidget from '@/components/ChatWidget';   // client component (safe to import)
+import PWARegister from './PWARegister';            // client component
 
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: readonly Lang[] = ['en', 'pt', 'es', 'fr'] as const;
@@ -31,12 +32,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang={lang}>
       <body className="bg-slate-50 text-slate-900">
-        {/* Registers next-pwa on the client in production */}
+        {/* Register PWA client-side in prod; safe to import from a server component */}
         <PWARegister />
 
         <Suspense fallback={null}>
           <Header lang={lang} />
           {children}
+          {/* Global assistant (auto-hides on / and /sign-in inside ChatWidget) */}
+          <ChatWidget />
         </Suspense>
       </body>
     </html>

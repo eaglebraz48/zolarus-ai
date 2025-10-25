@@ -43,12 +43,9 @@ async function getRecentMemories(limit = 5) {
 }
 
 export default function ChatWidget({ email }: { email?: string | null }) {
-  const pathname = usePathname() || '/';
+  const pathname = usePathname();
   const sp = useSearchParams();
   const router = useRouter();
-
-  // 👉 Hide on Welcome page only
-  if (pathname === '/') return null;
 
   const debug = sp.get('debug') === '1';
 
@@ -64,6 +61,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   // debug counters
   const [memCount, setMemCount] = useState<number>(0);
   const [lastShop, setLastShop] = useState<any>(null);
+
+  // path memo + welcome/unauth pages guard
+  const nowPath = useMemo(() => pathname || '/', [pathname]);
+  const isWelcomeOrSignin = nowPath === '/' || nowPath === '/sign-in';
+
+  // ⇣ IMPORTANT: hide completely on Welcome/Sign-in
+  if (isWelcomeOrSignin) return null;
 
   // listen for profile name events
   useEffect(() => {
@@ -158,8 +162,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     router.push(dest);
     router.refresh(); // ensure same-route param changes take effect
   };
-
-  const nowPath = useMemo(() => pathname || '/', [pathname]);
 
   // ───────────────────────────────────────────────────────────────────────────────
   // Shopping parser (expanded triggers + “between X and Y”) + soft defaults
@@ -448,9 +450,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         background: '#fff',
         border: '1px solid #e2e8f0',
         borderRadius: 12,
-        // CHANGED: add subtle cyan glow to match brand
-        boxShadow:
-          '0 16px 40px rgba(2,6,23,.18), 0 0 22px rgba(0, 220, 255, 0.24)',
+        boxShadow: '0 16px 40px rgba(2,6,23,.18), 0 0 22px rgba(0, 220, 255, 0.24)',
         display: 'flex',
         flexDirection: 'column',
         zIndex: 50,
@@ -465,11 +465,11 @@ export default function ChatWidget({ email }: { email?: string | null }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           fontWeight: 700,
-          minHeight: 56, // give avatar room
+          minHeight: 56,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <AssistantAvatar size={44} /> {/* CHANGED: bigger & clearer */}
+          <AssistantAvatar size={44} />
           <span>Zolarus Assistant</span>
           {debug && <span style={{ fontSize: 11, color: '#64748b' }}>mem {memCount}{lastShop ? ' · resume' : ''}</span>}
         </div>
@@ -500,7 +500,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
                 justifyContent: isUser ? 'flex-end' : 'flex-start',
               }}
             >
-              {/* bot avatar on the left of messages */}
               {!isUser && <AssistantAvatar size={24} glow={false} bordered />}
 
               <div

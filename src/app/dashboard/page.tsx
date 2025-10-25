@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ShopCTA from '@/components/ShopCTA';
-import ChatWidget from '@/components/ChatWidget';
 
 /* ---------------------- i18n ---------------------- */
 type Lang = 'en' | 'pt' | 'es' | 'fr';
@@ -225,7 +224,7 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* DECORATIVE BACKGROUND (balanced left/right) */}
+      {/* Decorative background circles */}
       <div
         aria-hidden
         style={{
@@ -269,22 +268,21 @@ function DashboardContent() {
         />
       </div>
 
-      {/* CONTENT */}
       <div
         style={{
           maxWidth: 900,
           margin: '2rem auto',
           padding: '0 1rem',
           position: 'relative',
-          zIndex: 1, // keep above ornaments
+          zIndex: 1,
         }}
       >
         <h1
           style={{
             fontWeight: 800,
             fontSize: '2rem',
-            marginBottom: 12,
             color: '#0ea5e9',
+            marginBottom: 12,
           }}
         >
           {t.title}
@@ -397,9 +395,6 @@ function DashboardContent() {
           </div>
         </div>
       </div>
-
-      {/* Assistant stays as-is */}
-      <ChatWidget email={email} />
     </div>
   );
 }
