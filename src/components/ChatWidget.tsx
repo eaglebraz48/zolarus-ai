@@ -43,9 +43,12 @@ async function getRecentMemories(limit = 5) {
 }
 
 export default function ChatWidget({ email }: { email?: string | null }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || '/';
   const sp = useSearchParams();
   const router = useRouter();
+
+  // 👉 Hide on Welcome page only
+  if (pathname === '/') return null;
 
   const debug = sp.get('debug') === '1';
 
