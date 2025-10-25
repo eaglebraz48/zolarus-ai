@@ -171,6 +171,49 @@ const referralsCircleBtn: React.CSSProperties = {
   boxShadow: '0 10px 30px rgba(79,70,229,0.3)',
 };
 
+/* ---------------------- “Coming Soon” badge ---------------------- */
+function SoonBadge({ lang }: { lang: Lang }) {
+  const isPT = lang === 'pt';
+  const title = isPT
+    ? 'Zolarus Brasil'
+    : ({ en: 'Zolarus International', es: 'Zolarus Internacional', fr: 'Zolarus International' } as Record<Lang, string>)[lang] ||
+      'Zolarus International';
+
+  const soon = isPT
+    ? 'em breve'
+    : ({ en: 'coming soon', es: 'muy pronto', fr: 'bientôt' } as Record<Lang, string>)[lang] || 'coming soon';
+
+  // Position tuned to sit nicely on your left background circle.
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 180,             // ← adjust if needed
+        left: '10%',          // ← adjust if needed
+        width: 150,
+        height: 150,
+        borderRadius: '9999px',
+        background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)', // emerald
+        boxShadow: '0 10px 28px rgba(16,185,129,0.35)',
+        color: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: 12,
+        zIndex: 1,            // above the background circles
+        pointerEvents: 'auto',
+      }}
+      aria-label={`${title} — ${soon}`}
+      title={`${title} — ${soon}`}
+    >
+      <div style={{ fontWeight: 900, lineHeight: 1.1 }}>{title}</div>
+      <div style={{ opacity: 0.95, fontSize: 12, marginTop: 4 }}>{soon}</div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------------- */
 
 export default function DashboardPage() {
@@ -267,6 +310,9 @@ function DashboardContent() {
           }}
         />
       </div>
+
+      {/* The badge sits above the circles but below the cards */}
+      <SoonBadge lang={lang} />
 
       <div
         style={{
