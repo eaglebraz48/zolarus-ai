@@ -176,43 +176,81 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   function replyLine(s: string) { return s; }
 
+  // ───────────────────────────────────────────────────────────────────────────────
+  // Enhanced answerFor()
+  // ───────────────────────────────────────────────────────────────────────────────
   function answerFor(qRaw: string): { reply: string; nav?: string } {
     const q = qRaw.toLowerCase().trim();
 
-    // quick nav
-    if (/^(open|go to|take me to)\s+(reminder|reminders)\b/.test(q) || /open reminders?/.test(q))
-      return { reply: replyLine('Opening Reminders…'), nav: '/reminders' };
-    if (/referrals?|refs?|indica(ç|c)(õ|o)es?/.test(q))
-      return { reply: replyLine('Opening Referrals…'), nav: '/referrals' };
+    // universal reminder help
+    if (/create|make|set.*reminder|criar.*lembrete/.test(q))
+      return {
+        reply: replyLine(
+          'To create a reminder, open the **Reminders** page, type a clear title like “Mom’s birthday”, pick the date/time, and press **Save**. Zolarus will notify you and later help you find matching gifts.'
+        ),
+        nav: '/reminders'
+      };
+
+    // quick navs
+    if (/open reminders?|ir (aos|para os)? lembretes?/.test(q))
+      return {
+        reply: replyLine(
+          'Opening your **Reminders** page. You can view, edit, or add upcoming events there.'
+        ),
+        nav: '/reminders'
+      };
+
+    if (/referrals?|indica(ç|c)(õ|o)es?/.test(q))
+      return {
+        reply: replyLine(
+          'Opening **Referrals**. Copy your personal link to invite friends — when they join, you earn Zola Credits.'
+        ),
+        nav: '/referrals'
+      };
+
     if (/back( to)? (home|dashboard)/.test(q) || /^dashboard$/.test(q))
       return { reply: replyLine('Heading back to your Dashboard…'), nav: '/dashboard' };
-    if (/open shop|go to shop|where.*shop/.test(q) || /^shop$/.test(q))
-      return { reply: replyLine('Taking you to the Shop…'), nav: '/shop' };
 
-    // contextual help by path
-    if (nowPath === '/referrals' || nowPath === '/refs') {
-      return { 
-        reply: replyLine('This is your **Referrals** page. Copy your personal link to invite friends — when they join, you’ll earn Zola Credits.'),
-        nav: '/referrals'
+    if (/open shop|go to shop|where.*shop/.test(q) || /^shop$/.test(q))
+      return { reply: replyLine('Taking you to the Shop… Compare prices and save.'), nav: '/shop' };
+
+    // contextual help
+    if (nowPath === '/reminders') {
+      return {
+        reply: replyLine(
+          'Here you can view, edit, and create reminders for birthdays or special occasions. Each reminder can later connect to store suggestions when it’s time to buy a gift.'
+        )
       };
     }
 
     if (nowPath === '/profile') {
-      if (q.includes('why') || q.includes('what for') || q.includes('complete'))
-        return { reply: replyLine('Completing your profile helps me greet you properly and (soon) tailor reminders. It’s quick—name and optional phone—and it keeps your account tidy for future features.') };
-      if (q.includes('back') || q.includes('dashboard'))
-        return { reply: replyLine('Going back to your Dashboard…'), nav: '/dashboard' };
-      return { reply: replyLine('Update your **Full name** (and optional phone), then click **Save**. Ask “back to dashboard” when you’re done.') };
+      if (q.includes('why') || q.includes('complete'))
+        return {
+          reply: replyLine(
+            'Completing your profile helps personalize reminders and greetings. Soon it’ll also sync with your gift preferences.'
+          )
+        };
+      return {
+        reply: replyLine('Update your **Full name** and click **Save**. You can return to the Dashboard when done.')
+      };
     }
 
-    if (nowPath === '/reminders') {
-      if (q.includes('how') && (q.includes('create') || q.includes('make') || q.includes('set') || q.includes('criar')))
-        return { reply: replyLine('Type a **Title** (e.g., “Mom’s birthday”), choose a date/time, then **Save reminder**. Zolarus will remind you on time and let you come back to buy a thoughtful, budget-friendly gift — especially if you’re subscribed for store comparisons.') };
-      return { reply: replyLine('This page lists your upcoming reminders. Create a new one at the top. Ask me “back to dashboard” or “open shop” anytime.') };
+    if (nowPath === '/referrals') {
+      return {
+        reply: replyLine(
+          'This is your **Referrals** page. Share your link with friends — each active signup earns you Zola Credits redeemable for digital gifts.'
+        )
+      };
     }
 
-    return { reply: replyLine('I can navigate (e.g., “open reminders”, “back to dashboard”, “open shop”) or explain what’s on this page. Try asking “how do I create a reminder?” or “gift ideas under $50 for mom”.') };
+    return {
+      reply: replyLine(
+        'I can guide you through reminders, your profile, or the shop. Try asking “how do I create a reminder?” or “referrals” to learn how to earn Zola Credits.'
+      )
+    };
   }
+
+  // ───────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     let done = false;
