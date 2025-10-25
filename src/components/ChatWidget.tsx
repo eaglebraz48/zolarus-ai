@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import AssistantAvatar from '@/components/AssistantAvatar';
 
 type Msg = { role: 'bot' | 'user'; text: string };
@@ -23,11 +22,15 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
-  const [msgs, setMsgs] = useState<Msg[]>(() => [{ role: 'bot', text: 'Hi! I can help you explore Zolarus. Ask me anything.' }]);
+  const [msgs, setMsgs] = useState<Msg[]>(() => [
+    { role: 'bot', text: 'Hi! I can help you explore Zolarus. Ask me anything.' },
+  ]);
   const [showChips, setShowChips] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' }), [msgs]);
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+  }, [msgs]);
 
   const withLang = (path: string) => `${path}${path.includes('?') ? '&' : '?'}lang=${lang}`;
   const go = (path: string) => router.push(withLang(path));
@@ -87,7 +90,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   };
   const qs = quickQs[lang];
 
-  // translations for “Tips” and “Hide”
+  // localized labels
   const tipLabel = { en: 'Tips', pt: 'Dicas', es: 'Ayuda', fr: 'Astuces' }[lang];
   const hideLabel = { en: 'Hide', pt: 'Fechar', es: 'Ocultar', fr: 'Fermer' }[lang];
 
@@ -170,7 +173,10 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       </div>
 
       {/* messages */}
-      <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div
+        ref={listRef}
+        style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}
+      >
         {msgs.map((m, i) => (
           <div
             key={i}
@@ -257,17 +263,27 @@ export default function ChatWidget({ email }: { email?: string | null }) {
             justifyContent: 'flex-end',
           }}
         >
+          {/* Tips button — emerald green to stand out */}
           <button
             onClick={() => setShowChips(true)}
             style={{
-              border: '1px solid #e2e8f0',
-              background: '#ffffff',
+              border: 'none',
+              background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)', // emerald 400 → 500
+              color: '#ffffff',
               borderRadius: 999,
-              padding: '6px 10px',
+              padding: '8px 14px',
               fontSize: 12,
+              fontWeight: 700,
               cursor: 'pointer',
+              boxShadow: '0 6px 16px rgba(16, 185, 129, 0.35)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
             }}
+            aria-label={tipLabel}
+            title={tipLabel}
           >
+            <span aria-hidden>💡</span>
             {tipLabel}
           </button>
         </div>
@@ -306,5 +322,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     </div>
   );
 }
+
 
 
