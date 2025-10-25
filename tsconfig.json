@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2022"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -16,19 +12,17 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    // 👇 the two lines that make imports like "@/lib/referrals" work
+
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"],
+      "next/Headers": ["node_modules/next/headers.d.ts"]   // <-- keep ONLY this shim
     },
+
     "esModuleInterop": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "forceConsistentCasingInFileNames": true,
+
+    "plugins": [{ "name": "next" }]
   },
   "include": [
     "**/*.ts",
@@ -36,6 +30,6 @@
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
- "exclude": ["node_modules", "netlify/**"]
-
+  "exclude": ["node_modules", "netlify/**"]
 }
+
