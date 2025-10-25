@@ -210,7 +210,7 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Decorative background circles (restored styling) */}
+      {/* Decorative background circles */}
       <div
         aria-hidden
         style={{
@@ -254,7 +254,7 @@ function DashboardContent() {
         />
       </div>
 
-      {/* Always-visible badge, responsive position */}
+      {/* “Coming soon” badge (client-only to avoid hydration mismatch) */}
       <SoonBadge lang={lang} />
 
       <div
@@ -402,41 +402,54 @@ function DashboardContent() {
   );
 }
 
-/* ---------------------- “Coming Soon” badge (responsive) ---------------------- */
-function SoonBadge({ lang }: { lang: Lang }) {
-  const isPT = lang === 'pt';
-  const title = isPT
-    ? 'Zolarus Brasil'
-    : ({ en: 'Zolarus International', es: 'Zolarus Internacional', fr: 'Zolarus International' } as Record<Lang, string>)[lang] ||
-      'Zolarus International';
-  const soon = isPT
-    ? 'em breve'
-    : ({ en: 'coming soon', es: 'muy pronto', fr: 'bientôt' } as Record<Lang, string>)[lang] || 'coming soon';
+/* ---------------------- Client-only viewport + Badge ---------------------- */
+function useViewport() {
+  const [vw, setVw] = useState<number | null>(null);
 
-  // Track viewport width for smarter placement
-  const [vw, setVw] = useState<number>(typeof window === 'undefined' ? 1200 : window.innerWidth);
   useEffect(() => {
-    function onResize() { setVw(window.innerWidth); }
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const set = () => setVw(window.innerWidth);
+    set();
+    window.addEventListener('resize', set);
+    return () => window.removeEventListener('resize', set);
   }, []);
 
-  // Position + size rules:
-  // - wide (>= 1200): larger and higher
-  // - medium (900–1199): a bit lower
-  // - small (740–899): lower & smaller
-  // - extra small (< 740): hide to avoid crowding
+  return vw; // null until mounted (prevents hydration mismatch)
+}
+
+function SoonBadge({ lang }: { lang: Lang }) {
+  const vw = useViewport();
+
+  // Don’t render on server / until mounted (avoids hydration error)
+  if (vw === null) return null;
+
+  // Hide on very small viewports to avoid crowding
   if (vw < 740) return null;
 
-  // Position + size rules
-const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-const top  = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;  // a bit lower for balance
-const left = vw >= 1200 ? '16%' : vw >= 900 ? '14%' : '12%'; // move ~6% back left
+  // Copy
+  const title =
+    lang === 'pt'
+      ? 'Zolarus Brasil'
+      : lang === 'es'
+      ? 'Zolarus Internacional'
+      : 'Zolarus International';
 
+  const soon =
+    lang === 'pt'
+      ? 'em breve'
+      : lang === 'es'
+      ? 'muy pronto'
+      : lang === 'fr'
+      ? 'bientôt'
+      : 'coming soon';
 
+  // Size & placement (nudged slightly left for your app window)
+  const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+  const top = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
+  const left = vw >= 1200 ? '15%' : vw >= 900 ? '13%' : '11%';
 
   return (
     <div
+      aria-hidden
       style={{
         position: 'absolute',
         top,
@@ -444,23 +457,25 @@ const left = vw >= 1200 ? '16%' : vw >= 900 ? '14%' : '12%'; // move ~6% back le
         width: size,
         height: size,
         borderRadius: '9999px',
-        background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)',
-        boxShadow: '0 10px 28px rgba(16,185,129,0.35)',
+        background: 'linear-gradient(180deg,#22c55e,#16a34a)',
+        boxShadow:
+          '0 18px 50px rgba(34,197,94,0.30), 0 0 0 8px rgba(34,197,94,0.12), inset 0 -8px 18px rgba(0,0,0,0.12)',
         color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'grid',
+        placeItems: 'center',
         textAlign: 'center',
-        padding: 12,
-        zIndex: 3,               // above cards (zIndex:1) and bubbles (0)
-        pointerEvents: 'none',   // never blocks clicks
+        padding: 10,
+        zIndex: 2,
+        pointerEvents: 'none',
       }}
-      aria-label={`${title} — ${soon}`}
       title={`${title} — ${soon}`}
     >
-      <div style={{ fontWeight: 900, lineHeight: 1.1 }}>{title}</div>
-      <div style={{ opacity: 0.95, fontSize: 12, marginTop: 4 }}>{soon}</div>
+      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>
+        {title}
+      </div>
+      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
+        {soon}
+      </div>
     </div>
   );
 }
