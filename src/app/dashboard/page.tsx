@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -171,6 +171,7 @@ function DashboardContent() {
   const sp = useSearchParams();
   const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
   const t = L[lang];
+
   const [email, setEmail] = React.useState<string | null>(null);
   const [referralCount, setReferralCount] = React.useState<number>(0);
 
@@ -185,13 +186,16 @@ function DashboardContent() {
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       if (mounted) setEmail(user?.email ?? null);
+
       if (user?.id) {
         const { count } = await supabase
           .from('referrals')
           .select('*', { count: 'exact', head: true })
           .eq('referrer_id', user.id);
         if (mounted) setReferralCount(count ?? 0);
-      } else setReferralCount(0);
+      } else {
+        setReferralCount(0);
+      }
     })();
     return () => {
       mounted = false;
@@ -206,8 +210,17 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Background Circles */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      {/* Decorative background circles (restored styling) */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        {/* Left circle */}
         <div
           style={{
             position: 'absolute',
@@ -218,8 +231,12 @@ function DashboardContent() {
             borderRadius: '50%',
             background:
               'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
+            boxShadow:
+              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            filter: 'saturate(0.88)',
           }}
         />
+        {/* Right circle */}
         <div
           style={{
             position: 'absolute',
@@ -230,11 +247,14 @@ function DashboardContent() {
             borderRadius: '50%',
             background:
               'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
+            boxShadow:
+              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            filter: 'saturate(0.88)',
           }}
         />
       </div>
 
-      {/* Badge — now always visible */}
+      {/* Always-visible badge, responsive position */}
       <SoonBadge lang={lang} />
 
       <div
@@ -246,7 +266,17 @@ function DashboardContent() {
           zIndex: 1,
         }}
       >
-        <h1 style={{ fontWeight: 800, fontSize: '2rem', color: '#0ea5e9' }}>{t.title}</h1>
+        <h1
+          style={{
+            fontWeight: 800,
+            fontSize: '2rem',
+            color: '#0ea5e9',
+            marginBottom: 12,
+          }}
+        >
+          {t.title}
+        </h1>
+
         {email && (
           <div style={{ color: '#374151', marginBottom: 20 }}>
             {t.welcome}{' '}
@@ -277,11 +307,15 @@ function DashboardContent() {
             <Link href={withLang('/shop')} style={btnSecondary}>
               {t.browseNow}
             </Link>
+
             <div style={{ marginTop: 10 }}>
               <div style={{ fontWeight: 700, color: '#111827' }}>{t.compareTitle}</div>
-              <div style={{ fontWeight: 700 }}>{t.comparePriceLine}</div>
+              <div style={{ fontWeight: 700, color: '#111827' }}>
+                {t.comparePriceLine}
+              </div>
               <p style={{ marginTop: 8, color: '#374151' }}>{t.benefits}</p>
             </div>
+
             <div style={{ marginTop: 8 }}>
               <ShopCTA />
             </div>
@@ -296,74 +330,139 @@ function DashboardContent() {
         </div>
 
         {/* Referrals */}
-        <div style={{ textAlign: 'center', marginTop: 30 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: 24,
+          }}
+        >
           <Link
             href={withLang('/referrals')}
             style={{
               width: 120,
               height: 120,
-              borderRadius: '50%',
-              background: '#4f46e5',
-              color: '#fff',
-              fontWeight: 800,
               display: 'grid',
               placeItems: 'center',
-              margin: '0 auto 10px',
+              borderRadius: '9999px',
+              background: '#4f46e5',
+              color: '#fff',
               textDecoration: 'none',
+              fontWeight: 800,
               boxShadow: '0 10px 30px rgba(79,70,229,0.3)',
             }}
           >
             {t.referralsTitle}
           </Link>
-          <div style={{ fontSize: 14, color: '#374151' }}>{t.referralsCaption}</div>
+          <div style={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
+            {t.referralsCaption}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'center',
+              marginTop: 12,
+              width: '100%',
+              maxWidth: 560,
+            }}
+          >
+            <input
+              value={shareUrl}
+              readOnly
+              style={{
+                flex: 1,
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                padding: '10px 12px',
+                fontSize: 14,
+              }}
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(shareUrl)}
+              style={{
+                background: '#111827',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {t.copy}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ---------------------- “Coming Soon” badge ---------------------- */
+/* ---------------------- “Coming Soon” badge (responsive) ---------------------- */
 function SoonBadge({ lang }: { lang: Lang }) {
   const isPT = lang === 'pt';
   const title = isPT
     ? 'Zolarus Brasil'
-    : ({ en: 'Zolarus International', es: 'Zolarus Internacional', fr: 'Zolarus International' } as Record<Lang, string>)[lang];
+    : ({ en: 'Zolarus International', es: 'Zolarus Internacional', fr: 'Zolarus International' } as Record<Lang, string>)[lang] ||
+      'Zolarus International';
   const soon = isPT
     ? 'em breve'
-    : ({ en: 'coming soon', es: 'muy pronto', fr: 'bientôt' } as Record<Lang, string>)[lang];
+    : ({ en: 'coming soon', es: 'muy pronto', fr: 'bientôt' } as Record<Lang, string>)[lang] || 'coming soon';
 
-  const size = 'clamp(110px, 14vw, 150px)';
+  // Track viewport width for smarter placement
+  const [vw, setVw] = useState<number>(typeof window === 'undefined' ? 1200 : window.innerWidth);
+  useEffect(() => {
+    function onResize() { setVw(window.innerWidth); }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Position + size rules:
+  // - wide (>= 1200): larger and higher
+  // - medium (900–1199): a bit lower
+  // - small (740–899): lower & smaller
+  // - extra small (< 740): hide to avoid crowding
+  if (vw < 740) return null;
+
+  const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+  const top  = vw >= 1200 ? 160 : vw >= 900 ? 200 : 235;
+  const left = vw >= 1200 ? '9%' : vw >= 900 ? '7%' : '5%';
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: 170,
-        left: '7%',
+        top,
+        left,
         width: size,
         height: size,
-        borderRadius: '50%',
+        borderRadius: '9999px',
         background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)',
         boxShadow: '0 10px 28px rgba(16,185,129,0.35)',
         color: '#fff',
-        fontWeight: 800,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
         padding: 12,
-        zIndex: 3,
-        pointerEvents: 'none',
+        zIndex: 3,               // above cards (zIndex:1) and bubbles (0)
+        pointerEvents: 'none',   // never blocks clicks
       }}
+      aria-label={`${title} — ${soon}`}
+      title={`${title} — ${soon}`}
     >
-      <div style={{ lineHeight: 1.1 }}>{title}</div>
-      <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>{soon}</div>
+      <div style={{ fontWeight: 900, lineHeight: 1.1 }}>{title}</div>
+      <div style={{ opacity: 0.95, fontSize: 12, marginTop: 4 }}>{soon}</div>
     </div>
   );
 }
 
-/* -------------------------- Helpers -------------------------- */
+/* -------------------------- tiny UI helpers -------------------------- */
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -382,7 +481,15 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function CardTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 10, color: '#0f172a' }}>
+    <div
+      style={{
+        fontWeight: 800,
+        fontSize: 17,
+        marginBottom: 10,
+        color: '#0f172a',
+        letterSpacing: '0.1px',
+      }}
+    >
       {children}
     </div>
   );
