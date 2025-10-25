@@ -9,9 +9,6 @@ import AssistantAvatar from '@/components/AssistantAvatar';
 type Msg = { role: 'bot' | 'user'; text: string };
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 
-// ────────────────────────────────────────────────────────────────
-// ChatWidget
-// ────────────────────────────────────────────────────────────────
 export default function ChatWidget({ email }: { email?: string | null }) {
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -35,9 +32,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const withLang = (path: string) => `${path}${path.includes('?') ? '&' : '?'}lang=${lang}`;
   const go = (path: string) => router.push(withLang(path));
 
-  // ────────────────────────────────────────────────────────────────
-  // Replies
-  // ────────────────────────────────────────────────────────────────
   const replies = {
     explainProfileWhy: {
       en: 'Profiles help us connect with you—using your name and (soon) tailoring reminders. Fill it out today and click **Save**.',
@@ -65,36 +59,26 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     },
   };
 
-  // ────────────────────────────────────────────────────────────────
-  // Answer Logic
-  // ────────────────────────────────────────────────────────────────
   function answerFor(qRaw: string) {
     const q = qRaw.toLowerCase().trim();
 
-    // Global “why profile”
     if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil/.test(q)) {
       return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
     }
 
-    // Global “why referrals”
     if (/why.*referr|por que.*indica|¿por.*referenc|pourquoi.*parrain/.test(q)) {
       return { reply: replies.explainRefs[lang], nav: '/referrals' };
     }
 
-    // Navigation keywords
     if (/reminder|lembrete|recordatorio|rappel/.test(q)) return { reply: replies.explainReminder[lang], nav: '/reminders' };
     if (/profile|perfil|profil/.test(q)) return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
     if (/shop|loja|tienda|boutique/.test(q)) return { reply: replies.explainShop[lang], nav: '/shop' };
     if (/referr|indica|referenc|parrain/.test(q)) return { reply: replies.explainRefs[lang], nav: '/referrals' };
     if (/dashboard|home|painel|panel|tableau/.test(q)) return { reply: 'Back to Dashboard…', nav: '/dashboard' };
 
-    // Default help
     return { reply: 'Try asking “why complete my profile?”, “why referrals?”, or “open reminders”.' };
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Quick Suggestions
-  // ────────────────────────────────────────────────────────────────
   const quickQs: Record<Lang, string[]> = {
     en: ['why complete my profile?', 'why referrals?', 'open reminders', 'go to shop', 'back to dashboard'],
     pt: ['por que completar meu perfil?', 'por que indicações?', 'abrir lembretes', 'ir à loja', 'voltar ao painel'],
@@ -103,9 +87,10 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   };
   const qs = quickQs[lang];
 
-  // ────────────────────────────────────────────────────────────────
-  // Send Message
-  // ────────────────────────────────────────────────────────────────
+  // translations for “Tips” and “Hide”
+  const tipLabel = { en: 'Tips', pt: 'Dicas', es: 'Ayuda', fr: 'Astuces' }[lang];
+  const hideLabel = { en: 'Hide', pt: 'Fechar', es: 'Ocultar', fr: 'Fermer' }[lang];
+
   function sendUser() {
     const text = input.trim();
     if (!text) return;
@@ -118,9 +103,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (nav) setTimeout(() => go(nav), 400);
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // UI
-  // ────────────────────────────────────────────────────────────────
   if (!open)
     return (
       <button
@@ -263,7 +245,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
               flex: '0 0 auto',
             }}
           >
-            Hide
+            {hideLabel}
           </button>
         </div>
       ) : (
@@ -286,7 +268,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
               cursor: 'pointer',
             }}
           >
-            Tips
+            {tipLabel}
           </button>
         </div>
       )}
