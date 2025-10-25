@@ -176,7 +176,10 @@ export default function WelcomePage() {
           ))}
         </div>
 
-        <p className="mt-6 text-xs text-white/50">© {new Date().getFullYear()} Zolarus.</p>
+        <p className="mt-6 text-xs text-white/50">
+  © {new Date().getFullYear()} Arison8™ · All rights reserved.
+</p>
+
       </div>
     </main>
   );

@@ -37,7 +37,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Suspense fallback={null}>
           <Header lang={lang} />
           {children}
-          <ChatWidget />
         </Suspense>
       </body>
     </html>
