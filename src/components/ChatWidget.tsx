@@ -328,6 +328,20 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   function answerFor(qRaw: string): { reply: string; nav?: string; refresh?: boolean } {
     const q = qRaw.toLowerCase().trim();
 
+    // 0a) GLOBAL: "why complete profile?"
+    const askWhyProfile =
+      /why.*(complete|fill|finish).*(my )?profile|why.*profile( is)? (needed|necessary|important)|por que.*(completar|preencher).*(meu )?perfil|¿por.*(completar|llenar).*(mi )?perfil|pourquoi.*(compléter|remplir).*(mon|ma)?\s*profil/.test(q);
+    if (askWhyProfile) {
+      return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
+    }
+
+    // 0b) GLOBAL: "why referrals / why complete a referral"
+    const askWhyRefs =
+      /why.*referr|why.*(share|invite).*(link|friends)|why.*(complete|do).*(a )?referr|por que.*indica|¿por.*referenc|¿por.*invitar|pourquoi.*parrain|pourquoi.*inviter/.test(q);
+    if (askWhyRefs) {
+      return { reply: R.explainRefs, nav: '/referrals', refresh: false };
+    }
+
     // 1) Natural language shopping → /shop with params
     const parsed = parseShopping(qRaw);
     if (parsed) {
@@ -347,7 +361,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       return { reply: R.openingShop, nav: `/shop?${params.toString()}` };
     }
 
-    // 2) Simple intents (handle across pages)
+    // 2) Simple intents
     const wantReminders = /^(open|go to|take me to)\s+(reminder|reminders)\b/.test(q) || /open reminders?/.test(q) || /lembretes|recordatorios|rappels/.test(q);
     const wantProfile   = /open profile|edit profile|profile page/.test(q) || /perfil|profil/.test(q);
     const wantShop      = /open shop|go to shop|where.*shop/.test(q) || /^shop$/.test(q) || /\bloja\b|\btienda\b|\bboutique\b/.test(q);
@@ -356,16 +370,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (wantReminders) return { reply: R.openingReminders, nav: '/reminders' };
     if (wantProfile)   return { reply: R.openingProfile,   nav: '/profile' };
     if (wantShop)      return { reply: R.openingShop,      nav: '/shop' };
-    if (wantRefs)      return { reply: R.openingRefs,      nav: '/referrals' };
+    if (wantRefs)      return { reply: R.explainRefs,      nav: '/referrals' };
 
-    // 3) Contextual help by current page, but allow cross-topic Q&A:
+    // 3) Contextual help
     if (nowPath === '/reminders') {
-      // If they ask about profile while on reminders
       if (/profile|perfil|profil/.test(q)) return { reply: R.explainProfileWhy, nav: '/profile' };
-      // How to create reminder (language variants)
       if (/(how.*create|make|set|criar|crear|créer).*(reminder|lembrete|recordatorio|rappel)/.test(q) || /como criar um lembrete/.test(q))
         return { reply: R.explainCreateReminder };
-      // Stay on page if asking general help
       return { reply: replyLine(pick({
         en: 'This page lists your upcoming reminders. Create a new one at the top.',
         pt: 'Esta página lista seus lembretes. Crie um novo no topo.',
@@ -375,16 +386,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     }
 
     if (nowPath === '/profile') {
-      // If they ask about reminders while on profile
       if (/reminder|lembrete|recordatorio|rappel/.test(q)) return { reply: R.openingReminders, nav: '/reminders' };
-      // Why complete profile (even if already here, explain and stay)
       if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil|complete.*profile/.test(q))
         return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
       return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
     }
 
     if (nowPath === '/referrals' || nowPath === '/refs') {
-      // Normalize to /referrals
       return { reply: R.explainRefs, nav: '/referrals', refresh: nowPath !== '/referrals' };
     }
 
@@ -405,7 +413,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       reply: replyLine(pick({
         en: 'I can navigate (e.g., “open reminders”, “referrals”, “go to shop”) or explain a page. Try “how do I create a reminder?” or “gift ideas under $50 for mom”.',
         pt: 'Posso navegar (ex.: “abrir lembretes”, “indicações”, “ir à loja”) ou explicar a página. Tente “como criar um lembrete?” ou “ideias de presente até $50 para mãe”.',
-        es: 'Puedo navegar (p. ej., “abrir recordatorios”, “referencias”, “ir a la tienda”) o explicar la página. Prueba “¿cómo creo un recordatorio?” o “ideas de regalos por menos de $50 para mamá”.',
+        es: 'Puedo navegar (p. ej., “abrir recordatorios”, “referencias”, “ir a la tienda”) o explicar la página. Prueba “¿cómo creo un recordatorio?” o “ideas de regalos por menos de 50 $ para mamá”.',
         fr: 'Je peux naviguer (p. ex. « ouvrir les rappels », « parrainages », « aller à la boutique ») ou expliquer la page. Essayez « comment créer un rappel ? » ou « idées de cadeaux à moins de 50 $ pour maman ».',
       }))
     };
