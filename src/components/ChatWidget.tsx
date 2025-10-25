@@ -132,11 +132,44 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     fr: 'Demandez des rappels, la boutique ou les parrainages…',
   });
 
+  // QUICK SUGGESTION CHIPS (includes “why referrals?”)
   const allQs: Record<Lang, string[]> = {
-    en: ['how do i create a reminder?', 'why complete my profile?', 'open reminders', 'go to shop', 'referrals', 'back to dashboard'],
-    pt: ['como criar um lembrete?', 'por que completar meu perfil?', 'abrir lembretes', 'ir à loja', 'indicações', 'voltar ao painel'],
-    es: ['¿cómo creo un recordatorio?', '¿por qué completar mi perfil?', 'abrir recordatorios', 'ir a la tienda', 'referencias', 'volver al panel'],
-    fr: ['comment créer un rappel ?', 'pourquoi compléter mon profil ?', 'ouvrir les rappels', 'aller à la boutique', 'parrainages', 'retour au tableau de bord'],
+    en: [
+      'how do i create a reminder?',
+      'why complete my profile?',
+      'why referrals?',
+      'open reminders',
+      'go to shop',
+      'referrals',
+      'back to dashboard',
+    ],
+    pt: [
+      'como criar um lembrete?',
+      'por que completar meu perfil?',
+      'por que indicações?',
+      'abrir lembretes',
+      'ir à loja',
+      'indicações',
+      'voltar ao painel',
+    ],
+    es: [
+      '¿cómo creo un recordatorio?',
+      '¿por qué completar mi perfil?',
+      '¿por qué referencias?',
+      'abrir recordatorios',
+      'ir a la tienda',
+      'referencias',
+      'volver al panel',
+    ],
+    fr: [
+      'comment créer un rappel ?',
+      'pourquoi compléter mon profil ?',
+      'pourquoi parrainages ?',
+      'ouvrir les rappels',
+      'aller à la boutique',
+      'parrainages',
+      'retour au tableau de bord',
+    ],
   };
   const qs = allQs[lang] ?? allQs.en;
 
@@ -225,12 +258,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
     let cleaned = q
       .replace(/\b(between|from)\s*\$?\d{1,4}\s*(and|-|to)\s*\$?\d{1,4}\b/g, ' ')
-      .replace(/\$ ?\d{1,4}\s*-\s*\$?\d{1,4}/g, ' ')
-      .replace(/\bunder\s*\$?\d{1,4}\b/g, ' ')
-      .replace(/\bover\s*\$?\d{1,4}\b/g, ' ')
-      .replace(/\bmore than\s*\$?\d{1,4}\b/g, ' ')
-      .replace(/\babove\s*\$?\d{1,4}\b/g, ' ')
-      .replace(/\$ ?\d{1,4}\b/g, ' ')
+      .replace(/\$ ?(\d{1,4})\s*-\s*\$?(\d{1,4})/g, ' ')
+      .replace(/\bunder\s*\$?(\d{1,4})\b/g, ' ')
+      .replace(/\bover\s*\$?(\d{1,4})\b/g, ' ')
+      .replace(/\bmore than\s*\$?(\d{1,4})\b/g, ' ')
+      .replace(/\babove\s*\$?(\d{1,4})\b/g, ' ')
+      .replace(/\$ ?(\d{1,4})\b/g, ' ')
+      .replace(/\bgo\s*to\b/g, ' ') // prevent “go to shop” leaking “go to” as keywords
       .replace(/\b(find|search|look\s*for|buy|shop|shopping|gift|gifts?|ideas?|recommend)\b/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -328,21 +362,33 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   function answerFor(qRaw: string): { reply: string; nav?: string; refresh?: boolean } {
     const q = qRaw.toLowerCase().trim();
 
-    // 0a) GLOBAL: "why complete profile?"
+    // A) GLOBAL EXPLANATIONS FIRST (answer + navigate)
     const askWhyProfile =
       /why.*(complete|fill|finish).*(my )?profile|why.*profile( is)? (needed|necessary|important)|por que.*(completar|preencher).*(meu )?perfil|¿por.*(completar|llenar).*(mi )?perfil|pourquoi.*(compléter|remplir).*(mon|ma)?\s*profil/.test(q);
     if (askWhyProfile) {
       return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
     }
 
-    // 0b) GLOBAL: "why referrals / why complete a referral"
     const askWhyRefs =
       /why.*referr|why.*(share|invite).*(link|friends)|why.*(complete|do).*(a )?referr|por que.*indica|¿por.*referenc|¿por.*invitar|pourquoi.*parrain|pourquoi.*inviter/.test(q);
     if (askWhyRefs) {
       return { reply: R.explainRefs, nav: '/referrals', refresh: false };
     }
 
-    // 1) Natural language shopping → /shop with params
+    // B) SIMPLE NAV INTENTS (handled before parser so “go to shop” navigates cleanly)
+    const wantReminders = /^(open|go to|take me to)\s+(reminder|reminders)\b/.test(q) || /open reminders?/.test(q) || /lembretes|recordatorios|rappels/.test(q);
+    const wantProfile   = /\b(open|edit)\s+profile\b|\bprofile page\b/.test(q) || /\bperfil\b|\bprofil\b/.test(q);
+    const wantShop      = /open shop|go to shop|where.*shop/.test(q) || /^shop$/.test(q) || /\bloja\b|\btienda\b|\bboutique\b/.test(q);
+    const wantRefs      = /\breferrals?\b|\brefs?\b|indica(ç|c)(õ|o)es?|referencias|parrainages?/.test(q);
+    const wantBackDash  = /back( to (the )?)?(home|dashboard)\b|\bback home\b/.test(q);
+
+    if (wantReminders) return { reply: R.openingReminders, nav: '/reminders' };
+    if (wantProfile)   return { reply: R.openingProfile,   nav: '/profile' };
+    if (wantShop)      return { reply: R.openingShop,      nav: '/shop' };
+    if (wantRefs)      return { reply: R.explainRefs,      nav: '/referrals' }; // explanation + navigate
+    if (wantBackDash)  return { reply: R.backDash,         nav: '/dashboard' };
+
+    // C) NATURAL LANGUAGE SHOPPING (runs after nav)
     const parsed = parseShopping(qRaw);
     if (parsed) {
       const defaults = loadPrefs();
@@ -361,18 +407,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       return { reply: R.openingShop, nav: `/shop?${params.toString()}` };
     }
 
-    // 2) Simple intents
-    const wantReminders = /^(open|go to|take me to)\s+(reminder|reminders)\b/.test(q) || /open reminders?/.test(q) || /lembretes|recordatorios|rappels/.test(q);
-    const wantProfile   = /open profile|edit profile|profile page/.test(q) || /perfil|profil/.test(q);
-    const wantShop      = /open shop|go to shop|where.*shop/.test(q) || /^shop$/.test(q) || /\bloja\b|\btienda\b|\bboutique\b/.test(q);
-    const wantRefs      = /referrals?|refs?|indica(ç|c)(õ|o)es?|referencias|parrainages?/.test(q);
-
-    if (wantReminders) return { reply: R.openingReminders, nav: '/reminders' };
-    if (wantProfile)   return { reply: R.openingProfile,   nav: '/profile' };
-    if (wantShop)      return { reply: R.openingShop,      nav: '/shop' };
-    if (wantRefs)      return { reply: R.explainRefs,      nav: '/referrals' };
-
-    // 3) Contextual help
+    // D) CONTEXTUAL HELP
     if (nowPath === '/reminders') {
       if (/profile|perfil|profil/.test(q)) return { reply: R.explainProfileWhy, nav: '/profile' };
       if (/(how.*create|make|set|criar|crear|créer).*(reminder|lembrete|recordatorio|rappel)/.test(q) || /como criar um lembrete/.test(q))
@@ -387,8 +422,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
     if (nowPath === '/profile') {
       if (/reminder|lembrete|recordatorio|rappel/.test(q)) return { reply: R.openingReminders, nav: '/reminders' };
-      if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil|complete.*profile/.test(q))
-        return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
       return { reply: R.explainProfileWhy, nav: '/profile', refresh: false };
     }
 
@@ -397,18 +430,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     }
 
     if (nowPath === '/shop') {
-      if (/how|what|explain|por que|porqué|pourquoi|why/.test(q)) {
-        return { reply: R.explainShop, nav: '/shop', refresh: false };
-      }
       return { reply: R.explainShop, nav: '/shop', refresh: false };
     }
 
-    // Dashboard / anywhere else
-    if (/back( to)? (home|dashboard)/.test(q) || /^dashboard$/.test(q)) {
-      return { reply: R.backDash, nav: '/dashboard' };
-    }
+    // E) Dashboard / anywhere else
+    if (/^dashboard$/.test(q)) return { reply: R.backDash, nav: '/dashboard' };
 
-    // Default helpful nudge
+    // F) Default nudge
     return {
       reply: replyLine(pick({
         en: 'I can navigate (e.g., “open reminders”, “referrals”, “go to shop”) or explain a page. Try “how do I create a reminder?” or “gift ideas under $50 for mom”.',
