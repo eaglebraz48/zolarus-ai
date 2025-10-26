@@ -219,6 +219,17 @@ function SessionGate({ children }: { children: React.ReactNode }) {
     );
   }
   return <>{children}</>;
+} // ← make sure this closes SessionGate
+
+/* ---------------------------------------------------------------------- */
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SessionGate>
+        <DashboardContent />
+      </SessionGate>
+    </Suspense>
+  );
 }
 
 
