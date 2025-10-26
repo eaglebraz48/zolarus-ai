@@ -442,15 +442,17 @@ function SoonBadge({ lang }: { lang: Lang }) {
       ? 'bientôt'
       : 'coming soon';
 
-// Size & placement — desktop left a touch, app window right a touch
+// Size & placement — balanced for desktop vs app window
 const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
 const top  = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
 
+// desktop = slightly left, app = slightly right
 const left =
-  vw >= 1400 ? '12%' :   // very large desktop → a bit LEFT
-  vw >= 1200 ? '14%' :   // common desktop     → a bit LEFT
-  vw >= 900  ? '26%' :   // app-sized window   → push RIGHT
-               '20%';    // small but >740px   → modest RIGHT
+  vw >= 1400 ? '12%' :   // very large screens
+  vw >= 1200 ? '14%' :   // standard desktops
+  vw >= 900  ? '27%' :   // app window (~3in more right)
+               '20%';    // smaller but >740px
+
 
 
 
