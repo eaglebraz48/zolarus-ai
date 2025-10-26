@@ -165,24 +165,18 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
   const [ready, setReady] = React.useState(false);
 
-  function SessionGate({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const sp = useSearchParams();
-  const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
-  const [ready, setReady] = React.useState(false);
-
   React.useEffect(() => {
     let alive = true;
 
-    // 1) Listen for Supabase auth events (e.g., cookie becomes available)
+    // React to cookie becoming available after /callback
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!alive) return;
       if (session?.user) setReady(true);
     });
 
-    // 2) Poll briefly in case the callback set the cookie a moment ago
+    // Short poll to avoid redirecting users who just arrived
     let tries = 0;
-    const maxTries = 15;     // ~2.25s total
+    const maxTries = 15; // ~2.25s
     const interval = 150;
 
     const check = async () => {
@@ -219,31 +213,9 @@ function SessionGate({ children }: { children: React.ReactNode }) {
     );
   }
   return <>{children}</>;
-} // ← make sure this closes SessionGate
-
-/* ---------------------------------------------------------------------- */
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SessionGate>
-        <DashboardContent />
-      </SessionGate>
-    </Suspense>
-  );
 }
 
-
 /* ---------------------------------------------------------------------- */
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SessionGate>
-        <DashboardContent />
-      </SessionGate>
-    </Suspense>
-  );
-}
-
 function DashboardContent() {
   const sp = useSearchParams();
   const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
@@ -279,7 +251,7 @@ function DashboardContent() {
     };
   }, [lang]);
 
-  // ✅ Safe clone of current query params (no casting)
+  // Keep current query params, enforce lang
   const withLang = (href: string) => {
     const p = new URLSearchParams(Array.from(sp.entries()));
     p.set('lang', lang);
@@ -497,8 +469,8 @@ function useViewport() {
 function SoonBadge({ lang }: { lang: Lang }) {
   const vw = useViewport();
 
-  if (vw === null) return null;      // wait for mount
-  if (vw < 740) return null;         // hide on tiny screens
+  if (vw === null) return null; // wait for mount
+  if (vw < 740) return null; // hide on tiny screens
 
   const title =
     lang === 'pt'
@@ -517,12 +489,9 @@ function SoonBadge({ lang }: { lang: Lang }) {
       : 'coming soon';
 
   const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-  const top  = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
+  const top = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
   const left =
-    vw >= 1400 ? '12%' :
-    vw >= 1200 ? '14%' :
-    vw >= 900  ? '27%' :
-                 '20%';
+    vw >= 1400 ? '12%' : vw >= 1200 ? '14%' : vw >= 900 ? '27%' : '20%';
 
   return (
     <div
@@ -547,9 +516,7 @@ function SoonBadge({ lang }: { lang: Lang }) {
       }}
       title={`${title} — ${soon}`}
     >
-      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>
-        {title}
-      </div>
+      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>{title}</div>
       <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
         {soon}
       </div>
@@ -587,5 +554,16 @@ function CardTitle({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+/* -------------------------- default export -------------------------- */
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SessionGate>
+        <DashboardContent />
+      </SessionGate>
+    </Suspense>
   );
 }
