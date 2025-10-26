@@ -2,9 +2,9 @@
 'use client';
 
 import * as React from 'react';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ShopCTA from '@/components/ShopCTA';
 
@@ -158,11 +158,42 @@ const btnDisabled: React.CSSProperties = {
   cursor: 'not-allowed',
 };
 
+/* ---------------------- Session Gate ---------------------- */
+function SessionGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!alive) return;
+
+      if (!data?.session?.user) {
+        const next = `/dashboard?lang=${encodeURIComponent(lang)}`;
+        router.replace(`/sign-in?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+        return;
+      }
+      setReady(true);
+    })();
+    return () => { alive = false; };
+  }, [router, lang]);
+
+  if (!ready) {
+    return <main style={{ padding: 24, textAlign: 'center' }}>Loading your dashboard…</main>;
+  }
+  return <>{children}</>;
+}
+
 /* ---------------------------------------------------------------------- */
 export default function DashboardPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <DashboardContent />
+      <SessionGate>
+        <DashboardContent />
+      </SessionGate>
     </Suspense>
   );
 }
@@ -202,8 +233,9 @@ function DashboardContent() {
     };
   }, [lang]);
 
+  // ✅ Safe clone of current query params (no casting)
   const withLang = (href: string) => {
-    const p = new URLSearchParams(sp as unknown as URLSearchParams);
+    const p = new URLSearchParams(Array.from(sp.entries()));
     p.set('lang', lang);
     return `${href}?${p.toString()}`;
   };
@@ -254,7 +286,7 @@ function DashboardContent() {
         />
       </div>
 
-      {/* “Coming soon” badge (client-only to avoid hydration mismatch) */}
+      {/* Client-only badge */}
       <SoonBadge lang={lang} />
 
       <div
@@ -404,9 +436,9 @@ function DashboardContent() {
 
 /* ---------------------- Client-only viewport + Badge ---------------------- */
 function useViewport() {
-  const [vw, setVw] = useState<number | null>(null);
+  const [vw, setVw] = React.useState<number | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const set = () => setVw(window.innerWidth);
     set();
     window.addEventListener('resize', set);
@@ -419,13 +451,9 @@ function useViewport() {
 function SoonBadge({ lang }: { lang: Lang }) {
   const vw = useViewport();
 
-  // Don’t render on server / until mounted (avoids hydration error)
-  if (vw === null) return null;
+  if (vw === null) return null;      // wait for mount
+  if (vw < 740) return null;         // hide on tiny screens
 
-  // Hide on very small viewports to avoid crowding
-  if (vw < 740) return null;
-
-  // Copy
   const title =
     lang === 'pt'
       ? 'Zolarus Brasil'
@@ -442,21 +470,13 @@ function SoonBadge({ lang }: { lang: Lang }) {
       ? 'bientôt'
       : 'coming soon';
 
-// Size & placement — balanced for desktop vs app window
-const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-const top  = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
-
-// desktop = slightly left, app = slightly right
-const left =
-  vw >= 1400 ? '12%' :   // very large screens
-  vw >= 1200 ? '14%' :   // standard desktops
-  vw >= 900  ? '27%' :   // app window (~3in more right)
-               '20%';    // smaller but >740px
-
-
-
-
-
+  const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+  const top  = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
+  const left =
+    vw >= 1400 ? '12%' :
+    vw >= 1200 ? '14%' :
+    vw >= 900  ? '27%' :
+                 '20%';
 
   return (
     <div
