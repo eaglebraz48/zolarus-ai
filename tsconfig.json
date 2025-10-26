@@ -15,21 +15,19 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "next/Headers": ["node_modules/next/headers.d.ts"]   // <-- keep ONLY this shim
+      "@/*": ["src/*"]
     },
 
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-
     "plugins": [{ "name": "next" }]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.d.ts",
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules", "netlify/**"]
 }
-
