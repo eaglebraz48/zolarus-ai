@@ -165,27 +165,62 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
   const [ready, setReady] = React.useState(false);
 
+  function SessionGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const lang = (isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en') as Lang;
+  const [ready, setReady] = React.useState(false);
+
   React.useEffect(() => {
     let alive = true;
-    (async () => {
+
+    // 1) Listen for Supabase auth events (e.g., cookie becomes available)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!alive) return;
+      if (session?.user) setReady(true);
+    });
+
+    // 2) Poll briefly in case the callback set the cookie a moment ago
+    let tries = 0;
+    const maxTries = 15;     // ~2.25s total
+    const interval = 150;
+
+    const check = async () => {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
 
-      if (!data?.session?.user) {
-        const next = `/dashboard?lang=${encodeURIComponent(lang)}`;
-        router.replace(`/sign-in?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
+      if (data?.session?.user) {
+        setReady(true);
         return;
       }
-      setReady(true);
-    })();
-    return () => { alive = false; };
+      if (tries++ < maxTries) {
+        setTimeout(check, interval);
+      } else {
+        const next = `/dashboard?lang=${encodeURIComponent(lang)}`;
+        router.replace(
+          `/sign-in?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`
+        );
+      }
+    };
+
+    check();
+
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
   }, [router, lang]);
 
   if (!ready) {
-    return <main style={{ padding: 24, textAlign: 'center' }}>Loading your dashboard…</main>;
+    return (
+      <main style={{ padding: 24, textAlign: 'center' }}>
+        Loading your dashboard…
+      </main>
+    );
   }
   return <>{children}</>;
 }
+
 
 /* ---------------------------------------------------------------------- */
 export default function DashboardPage() {
