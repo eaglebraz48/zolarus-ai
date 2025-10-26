@@ -442,10 +442,13 @@ function SoonBadge({ lang }: { lang: Lang }) {
       ? 'bientôt'
       : 'coming soon';
 
-  // Size & placement (nudged slightly left for your app window)
-  const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-  const top = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
-  const left = vw >= 1200 ? '15%' : vw >= 900 ? '13%' : '11%';
+// Size & placement — move a bit **right** for app-sized windows
+const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+const top  = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
+
+// push to the right on smaller widths so it clears the Profile card
+const left = vw >= 1200 ? '19%' : vw >= 900 ? '18%' : '16%';
+
 
   return (
     <div
