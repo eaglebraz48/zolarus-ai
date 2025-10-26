@@ -72,13 +72,13 @@ export default function SignInPage() {
     setStatus('sending');
     setErr(null);
     try {
-      const origin =
-        typeof window !== 'undefined'
-          ? window.location.origin
-          : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+      // Always use the canonical prod base for email links.
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+      if (!siteUrl) throw new Error('Missing NEXT_PUBLIC_SITE_URL');
 
+      // ✅ FIX: send users to /auth/callback (matches your route & Supabase redirects)
       const emailRedirectTo =
-        `${origin}/callback?redirect=${encodeURIComponent(redirectRaw)}&lang=${encodeURIComponent(lang)}`;
+        `${siteUrl}/auth/callback?redirect=${encodeURIComponent(redirectRaw)}&lang=${encodeURIComponent(lang)}`;
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -102,6 +102,12 @@ export default function SignInPage() {
   return (
     <main style={{ maxWidth: 720, margin: '40px auto', padding: '0 16px' }}>
       <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 24 }}>Sign in</h1>
+
+      {/* ADDED: subtle assistant presence */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <AssistantAvatar size={22} glow bordered />
+        <span style={{ fontSize: 13, color: '#64748b' }}>Zolarus can help after you sign in</span>
+      </div>
 
       {loadingSession ? null : userEmail ? (
         <div
