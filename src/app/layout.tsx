@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import Header from '@/components/Header';
 import ChatWidget from '@/components/ChatWidget';   // client component (safe to import)
 import PWARegister from './PWARegister';            // client component
+import HashAuthBridge from '@/components/HashAuthBridge'; // ← handles #access_token magic links
 
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: readonly Lang[] = ['en', 'pt', 'es', 'fr'] as const;
@@ -36,6 +37,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <PWARegister />
 
         <Suspense fallback={null}>
+          {/* Bridges hash-based magic links -> Supabase session, then cleans URL */}
+          <HashAuthBridge />
+
           <Header lang={lang} />
           {children}
           {/* Global assistant (auto-hides on / and /sign-in inside ChatWidget) */}
