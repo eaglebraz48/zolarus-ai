@@ -442,12 +442,16 @@ function SoonBadge({ lang }: { lang: Lang }) {
       ? 'bientôt'
       : 'coming soon';
 
-// Size & placement — move opposite for desktop vs. app
-const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-const top  = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
+// Size & placement — desktop left a touch, app window right a touch
+const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
+const top  = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
 
-// desktop: shift left 3 inches; app: shift right 3 inches
-const left = vw >= 1200 ? '12%' : vw >= 900 ? '25%' : '18%';
+const left =
+  vw >= 1400 ? '12%' :   // very large desktop → a bit LEFT
+  vw >= 1200 ? '14%' :   // common desktop     → a bit LEFT
+  vw >= 900  ? '26%' :   // app-sized window   → push RIGHT
+               '20%';    // small but >740px   → modest RIGHT
+
 
 
 
