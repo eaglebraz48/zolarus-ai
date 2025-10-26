@@ -447,7 +447,8 @@ const size = vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
 const top  = vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
 
 // desktop: shift left 3 inches; app: shift right 3 inches
-const left = vw >= 1200 ? '12%' : vw >= 900 ? '23%' : '18%';
+const left = vw >= 1200 ? '12%' : vw >= 900 ? '25%' : '18%';
+
 
 
 
