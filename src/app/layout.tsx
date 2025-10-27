@@ -2,18 +2,23 @@ import './globals.css';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
+import dynamic from 'next/dynamic';
 
 import Header from '@/components/Header';
 import ChatWidget from '@/components/ChatWidget';
 import PWARegister from './PWARegister';
-import HashAuthBridge from '@/components/HashAuthBridge';
+
+// ⬇️ Load hash bridge client-side only
+const HashAuthBridge = dynamic(() => import('@/components/HashAuthBridge'), {
+  ssr: false,
+});
 
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: readonly Lang[] = ['en', 'pt', 'es', 'fr'] as const;
 
 async function safeLangFromCookies(): Promise<Lang> {
   try {
-    const jar = await cookies(); // <-- await because cookies() is async in your build
+    const jar = await cookies();
     const v = jar.get('zola_lang')?.value;
     return v && (LANGS as readonly string[]).includes(v as Lang) ? (v as Lang) : 'en';
   } catch {
@@ -38,6 +43,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="bg-slate-50 text-slate-900">
         <PWARegister />
         <Suspense fallback={null}>
+          {/* Bridges Supabase hash tokens → session, client-only */}
           <HashAuthBridge />
           <Header lang={lang} />
           {children}
