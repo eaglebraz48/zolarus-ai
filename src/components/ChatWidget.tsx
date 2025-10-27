@@ -23,27 +23,17 @@ async function fetchDisplayName(fallbackEmail?: string | null) {
   const uid = u?.id ?? null;
   const uemail = u?.email ?? null;
 
-  // Try profiles table first (match by id OR user_id OR email)
-  if (uid || uemail) {
-    let q = supabase
+  // Try profiles table - match by id
+  if (uid) {
+    const { data: rows, error } = await supabase
       .from('profiles')
-      .select('full_name,name,first_name,display_name,given_name,email,id,user_id')
+      .select('full_name')
+      .eq('id', uid)
       .limit(1);
-
-    if (uid && uemail) q = q.or(`id.eq.${uid},user_id.eq.${uid},email.eq.${uemail}`);
-    else if (uid) q = q.or(`id.eq.${uid},user_id.eq.${uid}`);
-    else q = q.eq('email', uemail as string);
-
-    const { data: rows } = await q;
-    const row = Array.isArray(rows) ? rows[0] : null;
-    const fromProfile =
-      row?.full_name ||
-      row?.display_name ||
-      row?.name ||
-      row?.first_name ||
-      row?.given_name ||
-      null;
-    if (fromProfile) return fromProfile as string;
+    
+    if (!error && rows && rows.length > 0 && rows[0]?.full_name) {
+      return rows[0].full_name as string;
+    }
   }
 
   // Fallback: auth metadata
@@ -75,7 +65,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Compose localized welcome AFTER we fetch profile/name (profiles -> auth meta -> email)
+  // Compose localized welcome AFTER we fetch profile/name
   useEffect(() => {
     let cancelled = false;
 
@@ -86,7 +76,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         en: `Hey ${displayName}! I'm Zola — your Zolarus assistant.\n\nI help you explore gifts, set reminders, and find the best deals across stores. Ready to discover something meaningful?`,
         pt: `Oi ${displayName}! Eu sou Zola — seu assistente da Zolarus.\n\nEu te ajudo a explorar presentes, criar lembretes e encontrar as melhores ofertas entre as lojas. Vamos descobrir algo especial?`,
         es: `¡Hola ${displayName}! Soy Zola — tu asistente de Zolarus.\n\nTe ayudo a descubrir regalos, crear recordatorios y encontrar las mejores ofertas entre tiendas. ¿Listo para encontrar algo especial?`,
-        fr: `Salut ${displayName} ! Je suis Zola — ton assistant Zolarus.\n\nJe t’aide à trouver des idées cadeaux, créer des rappels et comparer les meilleurs prix. Prêt à découvrir quelque chose d’unique ?`,
+        fr: `Salut ${displayName} ! Je suis Zola — ton assistant Zolarus.\n\nJe t'aide à trouver des idées cadeaux, créer des rappels et comparer les meilleurs prix. Prêt à découvrir quelque chose d'unique ?`,
       };
 
       if (cancelled) return;
@@ -123,19 +113,19 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       en: 'Profiles help Zolarus connect with you — using your name and (soon) tailoring reminders. Fill it out today and click **Save**.',
       pt: 'O perfil ajuda a Zolarus a se conectar com você — usando seu nome e (em breve) personalizando lembretes. Preencha hoje e clique em **Salvar**.',
       es: 'El perfil ayuda a Zolarus a conectar contigo — usando tu nombre y (pronto) personalizando recordatorios. Complétalo hoy y pulsa **Guardar**.',
-      fr: 'Le profil aide Zolarus à mieux vous connaître — en utilisant votre nom et (bientôt) en adaptant les rappels. Remplissez-le aujourd’hui et cliquez sur **Enregistrer**.',
+      fr: 'Le profil aide Zolarus à mieux vous connaître — en utilisant votre nom et (bientôt) en adaptant les rappels. Remplissez-le aujourd'hui et cliquez sur **Enregistrer**.',
     },
     explainRefs: {
-      en: 'Share your link on the **Referrals** page. Soon, you’ll earn **Zola Credits** for every active referral — start sharing today!',
+      en: 'Share your link on the **Referrals** page. Soon, you'll earn **Zola Credits** for every active referral — start sharing today!',
       pt: 'Compartilhe seu link na página de **Indicações**. Em breve, você ganhará **Créditos Zola** por cada indicação ativa — comece a compartilhar hoje!',
       es: 'Comparte tu enlace en la página de **Referencias**. Pronto ganarás **Créditos Zola** por cada referido activo — ¡empieza hoy!',
-      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, vous gagnerez des **Crédits Zola** pour chaque parrainage actif — commencez dès aujourd’hui !',
+      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, vous gagnerez des **Crédits Zola** pour chaque parrainage actif — commencez dès aujourd'hui !',
     },
     explainShop: {
       en: 'The Shop opens with your filters. Fill **for/occasion/keywords/budget** and click **Get ideas**.',
       pt: 'A Loja abre com seus filtros. Preencha **para/ocasião/palavras-chave/orçamento** e clique em **Ver ideias**.',
       es: 'La Tienda se abre con tus filtros. Completa **para/ocasión/palabras clave/presupuesto** y pulsa **Ver ideas**.',
-      fr: 'La Boutique s’ouvre avec vos filtres. Renseignez **pour/occasion/mots-clés/budget** puis cliquez sur **Trouver des idées**.',
+      fr: 'La Boutique s'ouvre avec vos filtres. Renseignez **pour/occasion/mots-clés/budget** puis cliquez sur **Trouver des idées**.',
     },
     explainReminder: {
       en: 'Type a **Title**, pick a date/time, then **Save reminder**. Zolarus will email you right on time.',
@@ -158,7 +148,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (/shop|loja|tienda|boutique/.test(q)) return { reply: replies.explainShop[lang], nav: '/shop' };
     if (/referr|indica|referenc|parrain/.test(q)) return { reply: replies.explainRefs[lang], nav: '/referrals' };
     if (/dashboard|home|painel|panel|tableau/.test(q)) return { reply: 'Back to Dashboard…', nav: '/dashboard' };
-    return { reply: 'Try asking “why complete my profile?”, “why referrals?”, or “open reminders”.' };
+    return { reply: 'Try asking "why complete my profile?", "why referrals?", or "open reminders".' };
   }
 
   const quickQs: Record<Lang, string[]> = {
