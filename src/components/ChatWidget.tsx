@@ -1,4 +1,3 @@
-// src/components/ChatWidget.tsx
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -68,11 +67,9 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil/.test(q)) {
       return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
     }
-
     if (/why.*referr|por que.*indica|¿por.*referenc|pourquoi.*parrain/.test(q)) {
       return { reply: replies.explainRefs[lang], nav: '/referrals' };
     }
-
     if (/reminder|lembrete|recordatorio|rappel/.test(q)) return { reply: replies.explainReminder[lang], nav: '/reminders' };
     if (/profile|perfil|profil/.test(q)) return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
     if (/shop|loja|tienda|boutique/.test(q)) return { reply: replies.explainShop[lang], nav: '/shop' };
@@ -90,7 +87,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   };
   const qs = quickQs[lang];
 
-  // localized labels
   const tipLabel = { en: 'Tips', pt: 'Dicas', es: 'Ayuda', fr: 'Astuces' }[lang];
   const hideLabel = { en: 'Hide', pt: 'Fechar', es: 'Ocultar', fr: 'Fermer' }[lang];
 
@@ -263,12 +259,11 @@ export default function ChatWidget({ email }: { email?: string | null }) {
             justifyContent: 'flex-end',
           }}
         >
-          {/* Tips button — emerald green to stand out */}
           <button
             onClick={() => setShowChips(true)}
             style={{
               border: 'none',
-              background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)', // emerald 400 → 500
+              background: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)',
               color: '#ffffff',
               borderRadius: 999,
               padding: '8px 14px',

@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx
 'use client';
 
 import * as React from 'react';
@@ -7,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ShopCTA from '@/components/ShopCTA';
+import ChatWidget from '@/components/ChatWidget';
 
 /* ---------------------- i18n ---------------------- */
 type Lang = 'en' | 'pt' | 'es' | 'fr';
@@ -137,8 +137,7 @@ const btnPrimary: React.CSSProperties = {
 };
 
 const btnSecondary: React.CSSProperties = {
-  // changed from gray to vivid red for the "Browse / Shop now" button
-  background: '#ef4444', // red-500
+  background: '#ef4444',
   color: '#ffffff',
   border: 'none',
   borderRadius: 10,
@@ -169,15 +168,13 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     let alive = true;
 
-    // React to cookie becoming available after /callback
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!alive) return;
       if (session?.user) setReady(true);
     });
 
-    // Short poll to avoid redirecting users who just arrived
     let tries = 0;
-    const maxTries = 15; // ~2.25s
+    const maxTries = 15;
     const interval = 150;
 
     const check = async () => {
@@ -252,7 +249,6 @@ function DashboardContent() {
     };
   }, [lang]);
 
-  // Keep current query params, enforce lang
   const withLang = (href: string) => {
     const p = new URLSearchParams(Array.from(sp.entries()));
     p.set('lang', lang);
@@ -261,51 +257,6 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Decorative background circles */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      >
-        {/* Left circle */}
-        <div
-          style={{
-            position: 'absolute',
-            left: '6%',
-            top: 130,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
-            boxShadow:
-              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
-            filter: 'saturate(0.88)',
-          }}
-        />
-        {/* Right circle */}
-        <div
-          style={{
-            position: 'absolute',
-            right: '4%',
-            top: 130,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
-            boxShadow:
-              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
-            filter: 'saturate(0.88)',
-          }}
-        />
-      </div>
-
-      {/* Client-only badge */}
       <SoonBadge lang={lang} />
 
       <div
@@ -335,7 +286,6 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Card>
             <CardTitle>{t.profile}</CardTitle>
@@ -380,7 +330,6 @@ function DashboardContent() {
           </Card>
         </div>
 
-        {/* Referrals */}
         <div
           style={{
             display: 'flex',
@@ -449,6 +398,9 @@ function DashboardContent() {
           </div>
         </div>
       </div>
+
+      {/* ✅ Chat auto-mount */}
+      <ChatWidget openOnMount />
     </div>
   );
 }
@@ -464,14 +416,12 @@ function useViewport() {
     return () => window.removeEventListener('resize', set);
   }, []);
 
-  return vw; // null until mounted (prevents hydration mismatch)
+  return vw;
 }
 
 function SoonBadge({ lang }: { lang: Lang }) {
   const vw = useViewport();
-
-  if (vw === null) return null; // wait for mount
-  if (vw < 740) return null; // hide on tiny screens
+  if (vw === null || vw < 740) return null;
 
   const title =
     lang === 'pt'
@@ -489,10 +439,9 @@ function SoonBadge({ lang }: { lang: Lang }) {
       ? 'bientôt'
       : 'coming soon';
 
-  const size = vw >= 1400 ? 150 : vw >= 1200 ? 150 : vw >= 900 ? 140 : 120;
-  const top = vw >= 1400 ? 170 : vw >= 1200 ? 170 : vw >= 900 ? 205 : 240;
-  const left =
-    vw >= 1400 ? '12%' : vw >= 1200 ? '14%' : vw >= 900 ? '27%' : '20%';
+  const size = vw >= 900 ? 140 : 120;
+  const top = vw >= 900 ? 205 : 240;
+  const left = vw >= 900 ? '27%' : '20%';
 
   return (
     <div
