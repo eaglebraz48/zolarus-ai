@@ -2,10 +2,58 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import AssistantAvatar from '@/components/AssistantAvatar';
 
 type Msg = { role: 'bot' | 'user'; text: string };
 type Lang = 'en' | 'pt' | 'es' | 'fr';
+
+function friendlyFromEmail(email?: string | null) {
+  if (!email) return 'there';
+  const base = email.split('@')[0];
+  const parts = base.split(/[._-]+/g).filter(Boolean);
+  return parts.length
+    ? parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+    : base;
+}
+
+async function fetchDisplayName(fallbackEmail?: string | null) {
+  const { data: auth } = await supabase.auth.getUser();
+  const u = auth.user;
+  const uid = u?.id ?? null;
+  const uemail = u?.email ?? null;
+
+  // Try profiles table first (match by id OR user_id OR email)
+  if (uid || uemail) {
+    let q = supabase
+      .from('profiles')
+      .select('full_name,name,first_name,display_name,given_name,email,id,user_id')
+      .limit(1);
+
+    if (uid && uemail) q = q.or(`id.eq.${uid},user_id.eq.${uid},email.eq.${uemail}`);
+    else if (uid) q = q.or(`id.eq.${uid},user_id.eq.${uid}`);
+    else q = q.eq('email', uemail as string);
+
+    const { data: rows } = await q;
+    const row = Array.isArray(rows) ? rows[0] : null;
+    const fromProfile =
+      row?.full_name ||
+      row?.display_name ||
+      row?.name ||
+      row?.first_name ||
+      row?.given_name ||
+      null;
+    if (fromProfile) return fromProfile as string;
+  }
+
+  // Fallback: auth metadata
+  const meta = (u?.user_metadata as any) || {};
+  const fromMeta = meta.full_name || meta.name || meta.first_name || null;
+  if (fromMeta) return fromMeta as string;
+
+  // Final fallback: derive from email
+  return friendlyFromEmail(uemail ?? fallbackEmail ?? null);
+}
 
 export default function ChatWidget({ email }: { email?: string | null }) {
   const pathname = usePathname();
@@ -17,22 +65,51 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const lang: Lang = (allowed as string[]).includes(langRaw) ? (langRaw as Lang) : 'en';
   const nowPath = useMemo(() => pathname || '/', [pathname]);
 
+  // Hide on public pages
   if (nowPath === '/' || nowPath === '/sign-in') return null;
 
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
-  const [msgs, setMsgs] = useState<Msg[]>(() => {
-    const name = email ? email.split('@')[0] : 'there';
-    const welcome = {
-      en: `Hey ${name}! I'm Zola — your Zolarus assistant.\n\nI help you explore gifts, set reminders, and find the best deals across stores. Ready to discover something meaningful?`,
-      pt: `Oi ${name}! Eu sou a Zola — sua assistente da Zolarus.\n\nEu te ajudo a explorar presentes, criar lembretes e encontrar as melhores ofertas entre as lojas. Vamos descobrir algo especial?`,
-      es: `¡Hola ${name}! Soy Zola — tu asistente de Zolarus.\n\nTe ayudo a descubrir regalos, crear recordatorios y encontrar las mejores ofertas entre tiendas. ¿Listo para encontrar algo especial?`,
-      fr: `Salut ${name} ! Je suis Zola — ton assistante Zolarus.\n\nJe t’aide à trouver des idées cadeaux, créer des rappels et comparer les meilleurs prix. Prêt à découvrir quelque chose d’unique ?`,
-    }[lang];
-    return [{ role: 'bot', text: welcome }];
-  });
+  const [msgs, setMsgs] = useState<Msg[]>([]);
   const [showChips, setShowChips] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Compose localized welcome AFTER we fetch profile/name (profiles -> auth meta -> email)
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const displayName = await fetchDisplayName(email);
+
+      const welcomeMap: Record<Lang, string> = {
+        en: `Hey ${displayName}! I'm Zola — your Zolarus assistant.\n\nI help you explore gifts, set reminders, and find the best deals across stores. Ready to discover something meaningful?`,
+        pt: `Oi ${displayName}! Eu sou Zola — seu assistente da Zolarus.\n\nEu te ajudo a explorar presentes, criar lembretes e encontrar as melhores ofertas entre as lojas. Vamos descobrir algo especial?`,
+        es: `¡Hola ${displayName}! Soy Zola — tu asistente de Zolarus.\n\nTe ayudo a descubrir regalos, crear recordatorios y encontrar las mejores ofertas entre tiendas. ¿Listo para encontrar algo especial?`,
+        fr: `Salut ${displayName} ! Je suis Zola — ton assistant Zolarus.\n\nJe t’aide à trouver des idées cadeaux, créer des rappels et comparer les meilleurs prix. Prêt à découvrir quelque chose d’unique ?`,
+      };
+
+      if (cancelled) return;
+
+      const full = welcomeMap[lang];
+      setIsTyping(true);
+      setMsgs([{ role: 'bot', text: '' }]);
+
+      let i = 0;
+      const step = () => {
+        if (cancelled) return;
+        i += Math.max(1, Math.floor(full.length / 80));
+        setMsgs([{ role: 'bot', text: full.slice(0, i) }]);
+        if (i < full.length) setTimeout(step, 12);
+        else setIsTyping(false);
+      };
+      step();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, email]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -70,7 +147,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   function answerFor(qRaw: string) {
     const q = qRaw.toLowerCase().trim();
-
     if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil/.test(q)) {
       return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
     }
@@ -82,7 +158,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (/shop|loja|tienda|boutique/.test(q)) return { reply: replies.explainShop[lang], nav: '/shop' };
     if (/referr|indica|referenc|parrain/.test(q)) return { reply: replies.explainRefs[lang], nav: '/referrals' };
     if (/dashboard|home|painel|panel|tableau/.test(q)) return { reply: 'Back to Dashboard…', nav: '/dashboard' };
-
     return { reply: 'Try asking “why complete my profile?”, “why referrals?”, or “open reminders”.' };
   }
 
@@ -99,11 +174,10 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   function sendUser() {
     const text = input.trim();
-    if (!text) return;
+    if (!text || isTyping) return;
     setMsgs((m) => [...m, { role: 'user', text }]);
     setInput('');
     setShowChips(false);
-
     const { reply, nav } = answerFor(text);
     setMsgs((m) => [...m, { role: 'bot', text: reply }]);
     if (nav) setTimeout(() => go(nav), 400);
@@ -203,6 +277,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
               }}
             >
               {m.text}
+              {i === msgs.length - 1 && isTyping ? ' ▋' : null}
             </div>
           </div>
         ))}
@@ -225,6 +300,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
             <button
               key={s}
               onClick={() => {
+                if (isTyping) return;
                 setInput(s);
                 setTimeout(sendUser, 0);
               }}
@@ -234,8 +310,9 @@ export default function ChatWidget({ email }: { email?: string | null }) {
                 borderRadius: 999,
                 padding: '6px 10px',
                 fontSize: 12,
-                cursor: 'pointer',
+                cursor: isTyping ? 'not-allowed' : 'pointer',
                 flex: '0 0 auto',
+                opacity: isTyping ? 0.6 : 1,
               }}
             >
               {s}
@@ -308,6 +385,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         />
         <button
           type="submit"
+          disabled={isTyping}
           style={{
             background: '#0f172a',
             color: '#fff',
@@ -315,7 +393,8 @@ export default function ChatWidget({ email }: { email?: string | null }) {
             borderRadius: 10,
             padding: '10px 14px',
             fontWeight: 700,
-            cursor: 'pointer',
+            cursor: isTyping ? 'not-allowed' : 'pointer',
+            opacity: isTyping ? 0.7 : 1,
           }}
         >
           Send
@@ -324,5 +403,3 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     </div>
   );
 }
-
-

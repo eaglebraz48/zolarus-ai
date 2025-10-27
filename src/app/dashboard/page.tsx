@@ -8,163 +8,20 @@ import { supabase } from '@/lib/supabase';
 import ShopCTA from '@/components/ShopCTA';
 import ChatWidget from '@/components/ChatWidget';
 
-/* ---------------------- i18n ---------------------- */
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: Lang[] = ['en', 'pt', 'es', 'fr'];
 const isLang = (v: string | null): v is Lang => !!v && LANGS.includes(v as Lang);
 
 const L: Record<Lang, any> = {
-  en: {
-    title: 'Dashboard',
-    welcome: 'Welcome,',
-    profile: 'Profile',
-    basicInfo: 'Basic info',
-    setup: 'Set up profile',
-    shop: 'Shop',
-    exploreGifts: 'Explore gifts',
-    refs: 'Refs',
-    browseNow: 'Browse / Shop now',
-    reminders: 'Reminders',
-    remindersLead: "Set reminders for special occasions and we'll email you on time.",
-    upcoming: 'Upcoming',
-    open: 'Open',
-    credits: 'Zola Credits',
-    coming: 'Coming soon',
-    referralsTitle: 'Referrals',
-    referralsCaption: 'Credits toward shopping — start referring today.',
-    copy: 'Copy',
-    share: 'Share',
-    compareTitle: 'Compare prices across stores',
-    comparePriceLine: '$0.99/month subscription',
-    subscribeCta: 'Subscribe — $0.99/mo',
-    benefits:
-      "Compare prices across other stores to save on gifts and everyday buys. We'll surface smart matches for what you're shopping, so you don’t overpay when prices vary.",
-    intlTitle: 'Zolarus International',
-    intlSoon: 'coming soon',
-  },
-  pt: {
-    title: 'Painel',
-    welcome: 'Bem-vindo,',
-    profile: 'Perfil',
-    basicInfo: 'Informações básicas',
-    setup: 'Configurar perfil',
-    shop: 'Shop',
-    exploreGifts: 'Explorar presentes',
-    refs: 'Indicações',
-    browseNow: 'Ver / Comprar agora',
-    reminders: 'Lembretes',
-    remindersLead:
-      'Defina lembretes de datas especiais e enviaremos um email na hora certa.',
-    upcoming: 'Próximos',
-    open: 'Abrir',
-    credits: 'Créditos Zola',
-    coming: 'Em breve',
-    referralsTitle: 'Indicações',
-    referralsCaption: 'Créditos para compras — comece a indicar hoje.',
-    copy: 'Copiar',
-    share: 'Compartilhar',
-    compareTitle: 'Compare preços em várias lojas',
-    comparePriceLine: 'Assinatura de US$ 0,99/mês',
-    subscribeCta: 'Assinar — US$ 0,99/mês',
-    benefits:
-      'Compare preços em outras lojas para economizar em presentes e compras do dia a dia. Mostramos sugestões para o que você procura, evitando pagar mais quando os preços variam.',
-    intlTitle: 'Zolarus Brasil',
-    intlSoon: 'em breve',
-  },
-  es: {
-    title: 'Panel',
-    welcome: 'Bienvenido,',
-    profile: 'Perfil',
-    basicInfo: 'Información básica',
-    setup: 'Configurar perfil',
-    shop: 'Shop',
-    exploreGifts: 'Explorar regalos',
-    refs: 'Referidos',
-    browseNow: 'Ver / Comprar ahora',
-    reminders: 'Recordatorios',
-    remindersLead:
-      'Configura recordatorios de fechas especiales y te enviaremos un correo a tiempo.',
-    upcoming: 'Próximos',
-    open: 'Abrir',
-    credits: 'Créditos Zola',
-    coming: 'Próximamente',
-    referralsTitle: 'Referidos',
-    referralsCaption: 'Créditos para compras — empieza a referir hoy.',
-    copy: 'Copiar',
-    share: 'Compartir',
-    compareTitle: 'Compara precios en varias tiendas',
-    comparePriceLine: 'Suscripción de US$ 0,99/mes',
-    subscribeCta: 'Suscribirse — US$ 0,99/mes',
-    benefits:
-      'Compara precios en otras tiendas para ahorrar en regalos y compras diarias. Te mostramos opciones para lo que buscas, así no pagas de más cuando los precios cambian.',
-    intlTitle: 'Zolarus Internacional',
-    intlSoon: 'muy pronto',
-  },
-  fr: {
-    title: 'Tableau de bord',
-    welcome: 'Bienvenue,',
-    profile: 'Profil',
-    basicInfo: 'Infos de base',
-    setup: 'Configurer le profil',
-    shop: 'Shop',
-    exploreGifts: 'Idées cadeaux',
-    refs: 'Parrainages',
-    browseNow: 'Parcourir / Acheter',
-    reminders: 'Rappels',
-    remindersLead:
-      'Créez des rappels pour les dates importantes et nous vous enverrons un email à temps.',
-    upcoming: 'À venir',
-    open: 'Ouvrir',
-    credits: 'Crédits Zola',
-    coming: 'Bientôt disponible',
-    referralsTitle: 'Parrainages',
-    referralsCaption: "Crédits shopping — commencez à parrainer aujourd'hui.",
-    copy: 'Copier',
-    share: 'Partager',
-    compareTitle: 'Comparez les prix entre magasins',
-    comparePriceLine: 'Abonnement à 0,99 $/mois',
-    subscribeCta: 'S’abonner — 0,99 $/mois',
-    benefits:
-      'Comparez les prix dans d’autres boutiques pour économiser sur les cadeaux et les achats du quotidien. Nous proposons des correspondances pour ce que vous cherchez, afin d’éviter de payer trop cher.',
-    intlTitle: 'Zolarus International',
-    intlSoon: 'bientôt',
-  },
+  en: { title: 'Dashboard', welcome: 'Welcome,', profile: 'Profile', basicInfo: 'Basic info', setup: 'Set up profile', shop: 'Shop', exploreGifts: 'Explore gifts', refs: 'Refs', browseNow: 'Browse / Shop now', reminders: 'Reminders', remindersLead: "Set reminders for special occasions and we'll email you on time.", upcoming: 'Upcoming', open: 'Open', credits: 'Zola Credits', coming: 'Coming soon', referralsTitle: 'Referrals', referralsCaption: 'Credits toward shopping — start referring today.', copy: 'Copy', share: 'Share', compareTitle: 'Compare prices across stores', comparePriceLine: '$0.99/month subscription', subscribeCta: 'Subscribe — $0.99/mo', benefits: "Compare prices across other stores to save on gifts and everyday buys. We'll surface smart matches for what you're shopping, so you don’t overpay when prices vary.", intlTitle: 'Zolarus International', intlSoon: 'coming soon' },
+  pt: { title: 'Painel', welcome: 'Bem-vindo,', profile: 'Perfil', basicInfo: 'Informações básicas', setup: 'Configurar perfil', shop: 'Shop', exploreGifts: 'Explorar presentes', refs: 'Indicações', browseNow: 'Ver / Comprar agora', reminders: 'Lembretes', remindersLead: 'Defina lembretes de datas especiais e enviaremos um email na hora certa.', upcoming: 'Próximos', open: 'Abrir', credits: 'Créditos Zola', coming: 'Em breve', referralsTitle: 'Indicações', referralsCaption: 'Créditos para compras — comece a indicar hoje.', copy: 'Copiar', share: 'Compartilhar', compareTitle: 'Compare preços em várias lojas', comparePriceLine: 'Assinatura de US$ 0,99/mês', subscribeCta: 'Assinar — US$ 0,99/mês', benefits: 'Compare preços em outras lojas para economizar em presentes e compras do dia a dia. Mostramos sugestões para o que você procura, evitando pagar mais quando os preços variam.', intlTitle: 'Zolarus Brasil', intlSoon: 'em breve' },
+  es: { title: 'Panel', welcome: 'Bienvenido,', profile: 'Perfil', basicInfo: 'Información básica', setup: 'Configurar perfil', shop: 'Shop', exploreGifts: 'Explorar regalos', refs: 'Referidos', browseNow: 'Ver / Comprar ahora', reminders: 'Recordatorios', remindersLead: 'Configura recordatorios de fechas especiales y te enviaremos un correo a tiempo.', upcoming: 'Próximos', open: 'Abrir', credits: 'Créditos Zola', coming: 'Próximamente', referralsTitle: 'Referidos', referralsCaption: 'Créditos para compras — empieza a referir hoy.', copy: 'Copiar', share: 'Compartir', compareTitle: 'Compara precios en varias tiendas', comparePriceLine: 'Suscripción de US$ 0,99/mes', subscribeCta: 'Suscribirse — US$ 0,99/mes', benefits: 'Compara precios en otras tiendas para ahorrar en regalos y compras diarias. Te mostramos opciones para lo que buscas, así no pagas de más cuando los precios cambian.', intlTitle: 'Zolarus Internacional', intlSoon: 'muy pronto' },
+  fr: { title: 'Tableau de bord', welcome: 'Bienvenue,', profile: 'Profil', basicInfo: 'Infos de base', setup: 'Configurer le profil', shop: 'Shop', exploreGifts: 'Idées cadeaux', refs: 'Parrainages', browseNow: 'Parcourir / Acheter', reminders: 'Rappels', remindersLead: 'Créez des rappels pour les dates importantes et nous vous enverrons un email à temps.', upcoming: 'À venir', open: 'Ouvrir', credits: 'Crédits Zola', coming: 'Bientôt disponible', referralsTitle: 'Parrainages', referralsCaption: "Crédits shopping — commencez à parrainer aujourd'hui.", copy: 'Copier', share: 'Partager', compareTitle: 'Comparez les prix entre magasins', comparePriceLine: 'Abonnement à 0,99 $/mois', subscribeCta: 'S’abonner — 0,99 $/mois', benefits: 'Comparez les prix dans d’autres boutiques pour économiser sur les cadeaux et les achats du quotidien. Nous proposons des correspondances pour ce que vous cherchez, afin d’éviter de payer trop cher.', intlTitle: 'Zolarus International', intlSoon: 'bientôt' },
 };
 
-/* ---------------------- styles ---------------------- */
-const btnPrimary: React.CSSProperties = {
-  background: '#111827',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-  display: 'inline-block',
-  textDecoration: 'none',
-};
-
-const btnSecondary: React.CSSProperties = {
-  background: '#ef4444',
-  color: '#ffffff',
-  border: 'none',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-  display: 'inline-block',
-  textDecoration: 'none',
-};
-
-const btnDisabled: React.CSSProperties = {
-  background: '#f3f4f6',
-  color: '#9ca3af',
-  border: 'none',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'not-allowed',
-};
+const btnPrimary: React.CSSProperties = { background: '#111827', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', display: 'inline-block', textDecoration: 'none' };
+const btnSecondary: React.CSSProperties = { background: '#ef4444', color: '#ffffff', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', display: 'inline-block', textDecoration: 'none' };
+const btnDisabled: React.CSSProperties = { background: '#f3f4f6', color: '#9ca3af', border: 'none', borderRadius: 10, padding: '10px 14px', fontWeight: 700, cursor: 'not-allowed' };
 
 /* ---------------------- Session Gate ---------------------- */
 function SessionGate({ children }: { children: React.ReactNode }) {
@@ -197,9 +54,7 @@ function SessionGate({ children }: { children: React.ReactNode }) {
         setTimeout(check, interval);
       } else {
         const next = `/dashboard?lang=${encodeURIComponent(lang)}`;
-        router.replace(
-          `/sign-in?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`
-        );
+        router.replace(`/sign-in?lang=${encodeURIComponent(lang)}&next=${encodeURIComponent(next)}`);
       }
     };
 
@@ -212,16 +67,12 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   }, [router, lang]);
 
   if (!ready) {
-    return (
-      <main style={{ padding: 24, textAlign: 'center' }}>
-        Loading your dashboard…
-      </main>
-    );
+    return <main style={{ padding: 24, textAlign: 'center' }}>Loading your dashboard…</main>;
   }
   return <>{children}</>;
 }
 
-/* ---------------------- Intl bubble (inline) ---------------------- */
+/* ---------------------- Intl bubble ---------------------- */
 function IntlInlineBubble({ title, soon }: { title: string; soon: string }) {
   return (
     <div
@@ -230,8 +81,7 @@ function IntlInlineBubble({ title, soon }: { title: string; soon: string }) {
         height: 132,
         borderRadius: 9999,
         background: 'linear-gradient(180deg,#22c55e,#16a34a)',
-        boxShadow:
-          '0 12px 36px rgba(16,185,129,0.45), 0 0 0 1px rgba(0,0,0,0.06)',
+        boxShadow: '0 12px 36px rgba(16,185,129,0.45), 0 0 0 1px rgba(0,0,0,0.06)',
         filter: 'drop-shadow(0 0 28px rgba(16,185,129,0.45))',
         color: '#fff',
         display: 'flex',
@@ -246,9 +96,7 @@ function IntlInlineBubble({ title, soon }: { title: string; soon: string }) {
       title={`${title} — ${soon}`}
     >
       <div style={{ fontSize: 16 }}>{title}</div>
-      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
-        {soon}
-      </div>
+      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>{soon}</div>
     </div>
   );
 }
@@ -261,17 +109,14 @@ function DashboardContent() {
 
   const [email, setEmail] = React.useState<string | null>(null);
 
-  const shareUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/?ref=global&lang=${lang}`
-      : '';
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/?ref=global&lang=${lang}` : '';
 
   React.useEffect(() => {
     let mounted = true;
     (async () => {
       const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      if (mounted) setEmail(user?.email ?? null);
+      if (!mounted) return;
+      setEmail(data.user?.email ?? null);
     })();
     return () => {
       mounted = false;
@@ -286,74 +131,44 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Decorative background circles (moved DOWN) */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      >
-        {/* Left circle */}
+      {/* background circles */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <div
           style={{
             position: 'absolute',
             left: '6%',
-            top: 210, // was 130
+            top: 210,
             width: 400,
             height: 400,
             borderRadius: '50%',
             background:
               'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
-            boxShadow:
-              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            boxShadow: '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
             filter: 'saturate(0.88)',
           }}
         />
-        {/* Right circle */}
         <div
           style={{
             position: 'absolute',
             right: '4%',
-            top: 210, // was 130
+            top: 210,
             width: 400,
             height: 400,
             borderRadius: '50%',
             background:
               'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
-            boxShadow:
-              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            boxShadow: '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
             filter: 'saturate(0.88)',
           }}
         />
       </div>
 
-      <div
-        style={{
-          maxWidth: 900,
-          margin: '2rem auto',
-          padding: '0 1rem',
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        <h1
-          style={{
-            fontWeight: 800,
-            fontSize: '2rem',
-            color: '#0ea5e9',
-            marginBottom: 12,
-          }}
-        >
-          {t.title}
-        </h1>
+      <div style={{ maxWidth: 900, margin: '2rem auto', padding: '0 1rem', position: 'relative', zIndex: 1 }}>
+        <h1 style={{ fontWeight: 800, fontSize: '2rem', color: '#0ea5e9', marginBottom: 12 }}>{t.title}</h1>
 
         {email && (
           <div style={{ color: '#374151', marginBottom: 20 }}>
-            {t.welcome}{' '}
-            <span style={{ fontWeight: 600, color: '#0ea5e9' }}>{email}</span>!
+            {t.welcome} <span style={{ fontWeight: 600, color: '#0ea5e9' }}>{email}</span>!
           </div>
         )}
 
@@ -382,9 +197,7 @@ function DashboardContent() {
 
             <div style={{ marginTop: 10 }}>
               <div style={{ fontWeight: 700, color: '#111827' }}>{t.compareTitle}</div>
-              <div style={{ fontWeight: 700, color: '#111827' }}>
-                {t.comparePriceLine}
-              </div>
+              <div style={{ fontWeight: 700, color: '#111827' }}>{t.comparePriceLine}</div>
               <p style={{ marginTop: 8, color: '#374151' }}>{t.benefits}</p>
             </div>
 
@@ -401,20 +214,9 @@ function DashboardContent() {
           </Card>
         </div>
 
-        {/* Referrals block — keeps PURPLE circle and adds GREEN intl bubble above it */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 10,
-            marginTop: 24,
-          }}
-        >
-          {/* Green bubble inserted here */}
+        {/* Referrals + intl bubble */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 24 }}>
           <IntlInlineBubble title={t.intlTitle} soon={t.intlSoon} />
-
-          {/* Original purple circle kept intact */}
           <Link
             href={withLang('/referrals')}
             style={{
@@ -434,30 +236,13 @@ function DashboardContent() {
             {t.referralsTitle}
           </Link>
 
-          <div style={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
-            {t.referralsCaption}
-          </div>
+          <div style={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>{t.referralsCaption}</div>
 
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              alignItems: 'center',
-              marginTop: 12,
-              width: '100%',
-              maxWidth: 560,
-            }}
-          >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12, width: '100%', maxWidth: 560 }}>
             <input
               value={shareUrl}
               readOnly
-              style={{
-                flex: 1,
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-                padding: '10px 12px',
-                fontSize: 14,
-              }}
+              style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 14 }}
             />
             <button
               onClick={() => navigator.clipboard.writeText(shareUrl)}
@@ -483,7 +268,6 @@ function DashboardContent() {
   );
 }
 
-/* -------------------------- tiny UI helpers -------------------------- */
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -502,21 +286,12 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function CardTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        fontWeight: 800,
-        fontSize: 17,
-        marginBottom: 10,
-        color: '#0f172a',
-        letterSpacing: '0.1px',
-      }}
-    >
+    <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 10, color: '#0f172a', letterSpacing: '0.1px' }}>
       {children}
     </div>
   );
 }
 
-/* -------------------------- default export -------------------------- */
 export default function DashboardPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
