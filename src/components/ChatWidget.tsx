@@ -113,13 +113,13 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       en: 'Profiles help Zolarus connect with you — using your name and (soon) tailoring reminders. Fill it out today and click **Save**.',
       pt: 'O perfil ajuda a Zolarus a se conectar com você — usando seu nome e (em breve) personalizando lembretes. Preencha hoje e clique em **Salvar**.',
       es: 'El perfil ayuda a Zolarus a conectar contigo — usando tu nombre y (pronto) personalizando recordatorios. Complétalo hoy y pulsa **Guardar**.',
-      fr: 'Le profil aide Zolarus à mieux vous connaître — en utilisant votre nom et (bientôt) en adaptant les rappels. Remplissez-le aujourd'hui et cliquez sur **Enregistrer**.',
+      fr: 'Le profil aide Zolarus à mieux vous connaître — en utilisant votre nom et (bientôt) en adaptant les rappels. Remplissez-le aujourd\'hui et cliquez sur **Enregistrer**.',
     },
     explainRefs: {
-      en: 'Share your link on the **Referrals** page. Soon, you'll earn **Zola Credits** for every active referral — start sharing today!',
+      en: 'Share your link on the **Referrals** page. Soon, you\'ll earn **Zola Credits** for every active referral — start sharing today!',
       pt: 'Compartilhe seu link na página de **Indicações**. Em breve, você ganhará **Créditos Zola** por cada indicação ativa — comece a compartilhar hoje!',
       es: 'Comparte tu enlace en la página de **Referencias**. Pronto ganarás **Créditos Zola** por cada referido activo — ¡empieza hoy!',
-      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, vous gagnerez des **Crédits Zola** pour chaque parrainage actif — commencez dès aujourd'hui !',
+      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, vous gagnerez des **Crédits Zola** pour chaque parrainage actif — commencez dès aujourd\'hui !',
     },
     explainShop: {
       en: 'The Shop opens with your filters. Fill **for/occasion/keywords/budget** and click **Get ideas**.',
