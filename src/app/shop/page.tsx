@@ -1,8 +1,8 @@
-//shop/page.tsx
+// src/app/shop/page.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image'; // NEW
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import ShopCTA from '@/components/ShopCTA';
 
@@ -261,75 +261,66 @@ export default function ShopPage() {
     }),
   };
 
+  // Draft (what the user is typing)
   const [forWhom, setForWhom] = useState('');
   const [occasion, setOccasion] = useState('');
   const [keywords, setKeywords] = useState('');
   const [min, setMin] = useState('');
   const [max, setMax] = useState('');
 
-  const [showLiveTip, setShowLiveTip] = useState(true);
+  // Committed (what the page uses to build links)
+  const [cForWhom, setCForWhom] = useState('');
+  const [cOccasion, setCOccasion] = useState('');
+  const [cKeywords, setCKeywords] = useState('');
+  const [cMin, setCMin] = useState('');
+  const [cMax, setCMax] = useState('');
+
+  // Hide the live tip (behavior is no longer live)
+  const [showLiveTip, setShowLiveTip] = useState(false);
   const [announce, setAnnounce] = useState('');
 
-  // Init from URL
+  // Init from URL once
   useEffect(() => {
     const isFresh = sp.get('fresh') === '1';
     if (isFresh) {
-      setForWhom('');
-      setOccasion('');
-      setKeywords('');
-      setMin('');
-      setMax('');
+      setForWhom(''); setOccasion(''); setKeywords(''); setMin(''); setMax('');
+      setCForWhom(''); setCOccasion(''); setCKeywords(''); setCMin(''); setCMax('');
       router.replace(withLang('/shop'));
       return;
     }
+
     const urlFor = sp.get('for') ?? '';
     const urlOccasion = sp.get('occasion') ?? '';
     const urlKeywords = sp.get('keywords') ?? '';
     const urlBudget = sp.get('budget') ?? '';
     const urlMin = sp.get('min') ?? '';
     const urlMax = sp.get('max') ?? '';
-    setForWhom(urlFor);
-    setOccasion(urlOccasion);
-    setKeywords(urlKeywords);
+
+    // populate both draft and committed from URL (initial render)
+    setForWhom(urlFor); setCForWhom(urlFor);
+    setOccasion(urlOccasion); setCOccasion(urlOccasion);
+    setKeywords(urlKeywords); setCKeywords(urlKeywords);
 
     if (urlMin || urlMax) {
-      setMin(urlMin);
-      setMax(urlMax);
+      setMin(urlMin); setMax(urlMax);
+      setCMin(urlMin); setCMax(urlMax);
     } else if (!urlBudget) {
-      setMin('');
-      setMax('');
+      setMin(''); setMax('');
+      setCMin(''); setCMax('');
     } else if (urlBudget.includes('-')) {
       const [lo, hi] = urlBudget.split('-');
-      setMin(lo || '');
-      setMax(typeof hi === 'undefined' ? '' : hi);
+      setMin(lo || ''); setMax(typeof hi === 'undefined' ? '' : hi);
+      setCMin(lo || ''); setCMax(typeof hi === 'undefined' ? '' : hi);
     } else {
-      setMin('0');
-      setMax(urlBudget);
+      setMin('0'); setMax(urlBudget);
+      setCMin('0'); setCMax(urlBudget);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp.toString()]);
 
-  // Sync URL (debounced)
+  // Clean URL if all empty (keep one replace when cleared)
   useEffect(() => {
-    const t = setTimeout(() => {
-      const params = new URLSearchParams();
-      params.set('lang', lang);
-      if (forWhom) params.set('for', forWhom);
-      if (occasion) params.set('occasion', occasion);
-      if (keywords) params.set('keywords', keywords);
-      if (min) params.set('min', min);
-      if (max) params.set('max', max);
-      const qs = params.toString();
-      const next = `/shop?${qs}`;
-      const current = `/shop?${sp.toString()}`;
-      if (current !== next) router.replace(next);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [forWhom, occasion, keywords, min, max, lang, router, sp]);
-
-  // Clean URL if all empty
-  useEffect(() => {
-    const allEmpty = !forWhom && !occasion && !keywords && !min && !max;
+    const allEmpty = !cForWhom && !cOccasion && !cKeywords && !cMin && !cMax;
     if (!allEmpty) return;
     const hasAny =
       sp.get('for') ||
@@ -339,39 +330,67 @@ export default function ShopPage() {
       sp.get('min') ||
       sp.get('max');
     if (hasAny) router.replace(withLang('/shop'));
-  }, [forWhom, occasion, keywords, min, max]);
+  }, [cForWhom, cOccasion, cKeywords, cMin, cMax]); // committed only
 
   const hasFilters = useMemo(
     () =>
       Boolean(
-        (forWhom || occasion || keywords || min || max).trim?.() ??
-          (forWhom || occasion || keywords || min || max),
+        (cForWhom || cOccasion || cKeywords || cMin || cMax).trim?.() ??
+          (cForWhom || cOccasion || cKeywords || cMin || cMax),
       ),
-    [forWhom, occasion, keywords, min, max],
+    [cForWhom, cOccasion, cKeywords, cMin, cMax],
   );
 
-  // ✅ Only change: normalize to EN before building store URL
+  // Build URL from committed values
   const amazonUrl = useMemo(() => {
     if (!hasFilters) return '#';
+    const nf = normalizeToEnglish(cForWhom, lang);
+    const no = normalizeToEnglish(cOccasion, lang);
+    const nk = normalizeToEnglish(cKeywords, lang);
+    return buildAmazonUrl({
+      forWhom: nf || undefined,
+      occasion: no || undefined,
+      keywords: nk || undefined,
+      min: cMin || undefined,
+      max: cMax || undefined,
+    });
+  }, [hasFilters, cForWhom, cOccasion, cKeywords, cMin, cMax, lang]);
+
+  // a11y announce on commit (not on each keystroke)
+  useEffect(() => {
+    const parts = [cForWhom, cOccasion, cKeywords, cMin, cMax].filter(Boolean).join(' ');
+    if (parts) setAnnounce(txt.liveSRUpdated);
+  }, [cForWhom, cOccasion, cKeywords, cMin, cMax]);
+
+  // Commit and open Amazon
+  function openIdeas() {
+    // Commit the current draft to the page state
+    setCForWhom(forWhom);
+    setCOccasion(occasion);
+    setCKeywords(keywords);
+    setCMin(min);
+    setCMax(max);
+
+    // Build the URL from the draft we just committed (same values)
     const nf = normalizeToEnglish(forWhom, lang);
     const no = normalizeToEnglish(occasion, lang);
     const nk = normalizeToEnglish(keywords, lang);
-    return buildAmazonUrl({
+    const url = buildAmazonUrl({
       forWhom: nf || undefined,
       occasion: no || undefined,
       keywords: nk || undefined,
       min: min || undefined,
       max: max || undefined,
     });
-  }, [hasFilters, forWhom, occasion, keywords, min, max, lang]);
 
-  // a11y announce
-  useEffect(() => {
-    const parts = [forWhom, occasion, keywords, min, max].filter(Boolean).join(' ');
-    if (parts) setAnnounce(txt.liveSRUpdated);
-  }, [forWhom, occasion, keywords, min, max]);
+    // Open in a new tab without interrupting the input focus flow
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
 
   function refreshIdeas() {
+    // Clear both draft and committed; reset URL once
+    setForWhom(''); setOccasion(''); setKeywords(''); setMin(''); setMax('');
+    setCForWhom(''); setCOccasion(''); setCKeywords(''); setCMin(''); setCMax('');
     router.push(withLang('/shop?fresh=1'));
   }
 
@@ -435,18 +454,16 @@ export default function ShopPage() {
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
         <div className="flex gap-2">
-          <a
-            href={hasFilters ? amazonUrl : '#'}
-            target={hasFilters ? '_blank' : undefined}
-            rel={hasFilters ? 'noopener noreferrer' : undefined}
+          <button
+            onClick={openIdeas}
             className={`rounded-xl px-4 py-2 font-semibold transition ${
-              hasFilters
+              (forWhom || occasion || keywords || min || max)
                 ? 'bg-amber-500 text-white hover:bg-amber-600'
                 : 'bg-slate-200 text-slate-400 pointer-events-none'
             }`}
           >
             {txt.btnIdeas}
-          </a>
+          </button>
           <button
             onClick={refreshIdeas}
             className="rounded-xl px-4 py-2 font-semibold bg-slate-900 text-white hover:bg-slate-800"
@@ -461,7 +478,7 @@ export default function ShopPage() {
         {announce}
       </div>
 
-      {/* Dismissible tip */}
+      {/* Dismissible tip (kept hidden by default for new behavior) */}
       {showLiveTip && (
         <div className="mt-3 flex max-w-3xl items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-emerald-800">
           <div className="font-extrabold mr-1">{txt.liveTipTitle}</div>
@@ -477,7 +494,7 @@ export default function ShopPage() {
 
       <p className="mt-3 text-slate-600">{txt.note}</p>
 
-      {/* Sections with prominent links */}
+      {/* Sections with prominent links (use committed values only) */}
       {hasFilters && (
         <div className="mt-6 space-y-6">
           <Section
