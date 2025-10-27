@@ -290,7 +290,7 @@ function DashboardContent() {
         />
       </div>
 
-      {/* Badge */}
+      {/* International badge (shifted right) */}
       <SoonBadge lang={lang} />
 
       <div
@@ -475,7 +475,12 @@ function SoonBadge({ lang }: { lang: Lang }) {
 
   const size = vw >= 900 ? 140 : 120;
   const top = vw >= 900 ? 205 : 240;
-  const left = vw >= 900 ? '27%' : '20%';
+  // Shift more to the right vs. previous values
+  const left =
+    vw >= 1400 ? '44%' :
+    vw >= 1200 ? '42%' :
+    vw >= 900  ? '38%' :
+                 '34%';
 
   return (
     <div
