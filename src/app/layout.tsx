@@ -11,12 +11,12 @@ import HashAuthBridge from '@/components/HashAuthBridge';
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: readonly Lang[] = ['en', 'pt', 'es', 'fr'] as const;
 
-function safeLangFromCookies(): Lang {
+async function safeLangFromCookies(): Promise<Lang> {
   try {
-    const v = cookies().get('zola_lang')?.value;
+    const jar = await cookies(); // <-- await because cookies() is async in your build
+    const v = jar.get('zola_lang')?.value;
     return v && (LANGS as readonly string[]).includes(v as Lang) ? (v as Lang) : 'en';
   } catch {
-    // if cookies() is unavailable in this runtime, fall back to English
     return 'en';
   }
 }
@@ -30,15 +30,14 @@ export const viewport = {
   themeColor: '#0ea5e9',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  const lang = safeLangFromCookies();
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const lang = await safeLangFromCookies();
 
   return (
     <html lang={lang}>
       <body className="bg-slate-50 text-slate-900">
         <PWARegister />
         <Suspense fallback={null}>
-          {/* Bridges Supabase hash tokens → session, then cleans URL */}
           <HashAuthBridge />
           <Header lang={lang} />
           {children}
