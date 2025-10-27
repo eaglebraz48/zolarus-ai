@@ -39,6 +39,8 @@ const L: Record<Lang, any> = {
     subscribeCta: 'Subscribe — $0.99/mo',
     benefits:
       "Compare prices across other stores to save on gifts and everyday buys. We'll surface smart matches for what you're shopping, so you don’t overpay when prices vary.",
+    intlTitle: 'Zolarus International',
+    intlSoon: 'coming soon',
   },
   pt: {
     title: 'Painel',
@@ -66,6 +68,8 @@ const L: Record<Lang, any> = {
     subscribeCta: 'Assinar — US$ 0,99/mês',
     benefits:
       'Compare preços em outras lojas para economizar em presentes e compras do dia a dia. Mostramos sugestões para o que você procura, evitando pagar mais quando os preços variam.',
+    intlTitle: 'Zolarus Brasil',
+    intlSoon: 'em breve',
   },
   es: {
     title: 'Panel',
@@ -93,6 +97,8 @@ const L: Record<Lang, any> = {
     subscribeCta: 'Suscribirse — US$ 0,99/mes',
     benefits:
       'Compara precios en otras tiendas para ahorrar en regalos y compras diarias. Te mostramos opciones para lo que buscas, así no pagas de más cuando los precios cambian.',
+    intlTitle: 'Zolarus Internacional',
+    intlSoon: 'muy pronto',
   },
   fr: {
     title: 'Tableau de bord',
@@ -120,6 +126,8 @@ const L: Record<Lang, any> = {
     subscribeCta: 'S’abonner — 0,99 $/mois',
     benefits:
       'Comparez les prix dans d’autres boutiques pour économiser sur les cadeaux et les achats du quotidien. Nous proposons des correspondances pour ce que vous cherchez, afin d’éviter de payer trop cher.',
+    intlTitle: 'Zolarus International',
+    intlSoon: 'bientôt',
   },
 };
 
@@ -213,6 +221,38 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/* ---------------------- Intl bubble (inline) ---------------------- */
+function IntlInlineBubble({ title, soon }: { title: string; soon: string }) {
+  return (
+    <div
+      style={{
+        width: 132,
+        height: 132,
+        borderRadius: 9999,
+        background: 'linear-gradient(180deg,#22c55e,#16a34a)',
+        boxShadow:
+          '0 12px 36px rgba(16,185,129,0.45), 0 0 0 1px rgba(0,0,0,0.06)',
+        filter: 'drop-shadow(0 0 28px rgba(16,185,129,0.45))',
+        color: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        fontWeight: 800,
+        lineHeight: 1.05,
+      }}
+      aria-hidden
+      title={`${title} — ${soon}`}
+    >
+      <div style={{ fontSize: 16 }}>{title}</div>
+      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
+        {soon}
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------------- */
 function DashboardContent() {
   const sp = useSearchParams();
@@ -246,7 +286,7 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Decorative background circles */}
+      {/* Decorative background circles (moved DOWN) */}
       <div
         aria-hidden
         style={{
@@ -261,7 +301,7 @@ function DashboardContent() {
           style={{
             position: 'absolute',
             left: '6%',
-            top: 130,
+            top: 210, // was 130
             width: 400,
             height: 400,
             borderRadius: '50%',
@@ -277,7 +317,7 @@ function DashboardContent() {
           style={{
             position: 'absolute',
             right: '4%',
-            top: 130,
+            top: 210, // was 130
             width: 400,
             height: 400,
             borderRadius: '50%',
@@ -289,9 +329,6 @@ function DashboardContent() {
           }}
         />
       </div>
-
-      {/* International badge (shifted right) */}
-      <SoonBadge lang={lang} />
 
       <div
         style={{
@@ -364,6 +401,7 @@ function DashboardContent() {
           </Card>
         </div>
 
+        {/* Referrals block — keeps PURPLE circle and adds GREEN intl bubble above it */}
         <div
           style={{
             display: 'flex',
@@ -373,6 +411,10 @@ function DashboardContent() {
             marginTop: 24,
           }}
         >
+          {/* Green bubble inserted here */}
+          <IntlInlineBubble title={t.intlTitle} soon={t.intlSoon} />
+
+          {/* Original purple circle kept intact */}
           <Link
             href={withLang('/referrals')}
             style={{
@@ -386,10 +428,12 @@ function DashboardContent() {
               textDecoration: 'none',
               fontWeight: 800,
               boxShadow: '0 10px 30px rgba(79,70,229,0.3)',
+              marginTop: 16,
             }}
           >
             {t.referralsTitle}
           </Link>
+
           <div style={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
             {t.referralsCaption}
           </div>
@@ -433,82 +477,8 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* ✅ Chat auto-mount with personalization */}
+      {/* Chat auto-mount with personalization */}
       <ChatWidget email={email} />
-    </div>
-  );
-}
-
-/* ---------------------- Client-only viewport + Badge ---------------------- */
-function useViewport() {
-  const [vw, setVw] = React.useState<number | null>(null);
-
-  React.useEffect(() => {
-    const set = () => setVw(window.innerWidth);
-    set();
-    window.addEventListener('resize', set);
-    return () => window.removeEventListener('resize', set);
-  }, []);
-
-  return vw;
-}
-
-function SoonBadge({ lang }: { lang: Lang }) {
-  const vw = useViewport();
-  if (vw === null || vw < 740) return null;
-
-  const title =
-    lang === 'pt'
-      ? 'Zolarus Brasil'
-      : lang === 'es'
-      ? 'Zolarus Internacional'
-      : 'Zolarus International';
-
-  const soon =
-    lang === 'pt'
-      ? 'em breve'
-      : lang === 'es'
-      ? 'muy pronto'
-      : lang === 'fr'
-      ? 'bientôt'
-      : 'coming soon';
-
-  const size = vw >= 900 ? 140 : 120;
-  const top = vw >= 900 ? 205 : 240;
-  // Shift more to the right vs. previous values
-  const left =
-    vw >= 1400 ? '44%' :
-    vw >= 1200 ? '42%' :
-    vw >= 900  ? '38%' :
-                 '34%';
-
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: 'absolute',
-        top,
-        left,
-        width: size,
-        height: size,
-        borderRadius: '9999px',
-        background: 'linear-gradient(180deg,#22c55e,#16a34a)',
-        boxShadow:
-          '0 18px 50px rgba(34,197,94,0.30), 0 0 0 8px rgba(34,197,94,0.12), inset 0 -8px 18px rgba(0,0,0,0.12)',
-        color: '#fff',
-        display: 'grid',
-        placeItems: 'center',
-        textAlign: 'center',
-        padding: 10,
-        zIndex: 2,
-        pointerEvents: 'none',
-      }}
-      title={`${title} — ${soon}`}
-    >
-      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>{title}</div>
-      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
-        {soon}
-      </div>
     </div>
   );
 }

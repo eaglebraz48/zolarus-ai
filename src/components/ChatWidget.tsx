@@ -21,9 +21,16 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
-  const [msgs, setMsgs] = useState<Msg[]>(() => [
-    { role: 'bot', text: 'Hi! I can help you explore Zolarus. Ask me anything.' },
-  ]);
+  const [msgs, setMsgs] = useState<Msg[]>(() => {
+    const name = email ? email.split('@')[0] : 'there';
+    const welcome = {
+      en: `Hey ${name}! I'm Zola — your Zolarus assistant.\n\nI help you explore gifts, set reminders, and find the best deals across stores. Ready to discover something meaningful?`,
+      pt: `Oi ${name}! Eu sou a Zola — sua assistente da Zolarus.\n\nEu te ajudo a explorar presentes, criar lembretes e encontrar as melhores ofertas entre as lojas. Vamos descobrir algo especial?`,
+      es: `¡Hola ${name}! Soy Zola — tu asistente de Zolarus.\n\nTe ayudo a descubrir regalos, crear recordatorios y encontrar las mejores ofertas entre tiendas. ¿Listo para encontrar algo especial?`,
+      fr: `Salut ${name} ! Je suis Zola — ton assistante Zolarus.\n\nJe t’aide à trouver des idées cadeaux, créer des rappels et comparer les meilleurs prix. Prêt à découvrir quelque chose d’unique ?`,
+    }[lang];
+    return [{ role: 'bot', text: welcome }];
+  });
   const [showChips, setShowChips] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -36,16 +43,16 @@ export default function ChatWidget({ email }: { email?: string | null }) {
 
   const replies = {
     explainProfileWhy: {
-      en: 'Profiles help us connect with you—using your name and (soon) tailoring reminders. Fill it out today and click **Save**.',
-      pt: 'O perfil nos ajuda a nos conectar com você—usando seu nome e (em breve) personalizando lembretes. Preencha hoje e clique em **Salvar**.',
-      es: 'El perfil nos ayuda a conectar contigo—usando tu nombre y (pronto) personalizando recordatorios. Complétalo hoy y pulsa **Guardar**.',
-      fr: 'Le profil nous aide à mieux vous connaître—utiliser votre nom et (bientôt) adapter les rappels. Remplissez-le aujourd’hui puis cliquez sur **Enregistrer**.',
+      en: 'Profiles help Zolarus connect with you — using your name and (soon) tailoring reminders. Fill it out today and click **Save**.',
+      pt: 'O perfil ajuda a Zolarus a se conectar com você — usando seu nome e (em breve) personalizando lembretes. Preencha hoje e clique em **Salvar**.',
+      es: 'El perfil ayuda a Zolarus a conectar contigo — usando tu nombre y (pronto) personalizando recordatorios. Complétalo hoy y pulsa **Guardar**.',
+      fr: 'Le profil aide Zolarus à mieux vous connaître — en utilisant votre nom et (bientôt) en adaptant les rappels. Remplissez-le aujourd’hui et cliquez sur **Enregistrer**.',
     },
     explainRefs: {
-      en: 'Share your link on the **Referrals** page. Soon, Zolarus will apply **Zola Credits**—start sharing today so they count when credits launch.',
-      pt: 'Compartilhe seu link na página de **Indicações**. Em breve, a Zolarus aplicará **Créditos Zola**—comece a compartilhar hoje para que contem quando os créditos forem lançados.',
-      es: 'Comparte tu enlace en la página de **Referencias**. Pronto, Zolarus aplicará **Créditos Zola**—empieza a compartir hoy para que cuenten cuando se activen los créditos.',
-      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, Zolarus appliquera des **Crédits Zola**—commencez à partager dès maintenant pour qu’ils comptent.',
+      en: 'Share your link on the **Referrals** page. Soon, you’ll earn **Zola Credits** for every active referral — start sharing today!',
+      pt: 'Compartilhe seu link na página de **Indicações**. Em breve, você ganhará **Créditos Zola** por cada indicação ativa — comece a compartilhar hoje!',
+      es: 'Comparte tu enlace en la página de **Referencias**. Pronto ganarás **Créditos Zola** por cada referido activo — ¡empieza hoy!',
+      fr: 'Partagez votre lien sur la page **Parrainages**. Bientôt, vous gagnerez des **Crédits Zola** pour chaque parrainage actif — commencez dès aujourd’hui !',
     },
     explainShop: {
       en: 'The Shop opens with your filters. Fill **for/occasion/keywords/budget** and click **Get ideas**.',
@@ -54,10 +61,10 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       fr: 'La Boutique s’ouvre avec vos filtres. Renseignez **pour/occasion/mots-clés/budget** puis cliquez sur **Trouver des idées**.',
     },
     explainReminder: {
-      en: 'Type a **Title**, pick a date/time, then **Save reminder**. We’ll email you on time.',
-      pt: 'Digite um **Título**, escolha data/hora e clique em **Salvar lembrete**. Vamos te avisar na hora certa.',
-      es: 'Escribe un **Título**, elige fecha/hora y **Guarda el recordatorio**. Te avisaremos a tiempo.',
-      fr: 'Saisissez un **Titre**, choisissez une date/heure puis **Enregistrez le rappel**. Nous vous préviendrons à temps.',
+      en: 'Type a **Title**, pick a date/time, then **Save reminder**. Zolarus will email you right on time.',
+      pt: 'Digite um **Título**, escolha data/hora e clique em **Salvar lembrete**. A Zolarus vai te avisar na hora certa.',
+      es: 'Escribe un **Título**, elige fecha/hora y **Guarda el recordatorio**. Zolarus te avisará a tiempo.',
+      fr: 'Saisissez un **Titre**, choisissez une date/heure puis **Enregistrez le rappel**. Zolarus vous préviendra à temps.',
     },
   };
 
@@ -317,6 +324,5 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     </div>
   );
 }
-
 
 
