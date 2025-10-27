@@ -137,8 +137,9 @@ const btnPrimary: React.CSSProperties = {
 };
 
 const btnSecondary: React.CSSProperties = {
-  background: '#e5e7eb',
-  color: '#111827',
+  // changed from gray to vivid red for the "Browse / Shop now" button
+  background: '#ef4444', // red-500
+  color: '#ffffff',
   border: 'none',
   borderRadius: 10,
   padding: '10px 14px',
