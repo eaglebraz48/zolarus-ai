@@ -19,5 +19,4 @@
   external_node_modules = ["stripe"]
 
 [build.environment]
-  NODE_VERSION = "20"
-
+  NODE_VERSION = "20.12.2"
