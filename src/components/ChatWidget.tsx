@@ -8,44 +8,26 @@ import AssistantAvatar from '@/components/AssistantAvatar';
 type Msg = { role: 'bot' | 'user'; text: string };
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 
-function friendlyFromEmail(email?: string | null) {
-  if (!email) return 'there';
-  const base = email.split('@')[0];
-  const parts = base.split(/[._-]+/g).filter(Boolean);
-  return parts.length
-    ? parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
-    : base;
-}
-
-async function fetchDisplayName(fallbackEmail?: string | null) {
+/* Fetch strictly from Supabase profile (no email fallback) */
+async function getProfileName(): Promise<string> {
   const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  const uid = u?.id ?? null;
-  const uemail = u?.email ?? null;
+  const uid = auth?.user?.id ?? null;
+  if (!uid) return 'there'; // neutral fallback only
 
-  // Try profiles table - match by id
-  if (uid) {
-    const { data: rows, error } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', uid)
-      .limit(1);
-    
-    if (!error && rows && rows.length > 0 && rows[0]?.full_name) {
-      return rows[0].full_name as string;
-    }
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (!error && data?.full_name && data.full_name.trim().length > 0) {
+    return data.full_name.trim();
   }
 
-  // Fallback: auth metadata
-  const meta = (u?.user_metadata as any) || {};
-  const fromMeta = meta.full_name || meta.name || meta.first_name || null;
-  if (fromMeta) return fromMeta as string;
-
-  // Final fallback: derive from email
-  return friendlyFromEmail(uemail ?? fallbackEmail ?? null);
+  return 'there';
 }
 
-export default function ChatWidget({ email }: { email?: string | null }) {
+export default function ChatWidget() {
   const pathname = usePathname();
   const sp = useSearchParams();
   const router = useRouter();
@@ -54,9 +36,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const allowed: Lang[] = ['en', 'pt', 'es', 'fr'];
   const lang: Lang = (allowed as string[]).includes(langRaw) ? (langRaw as Lang) : 'en';
   const nowPath = useMemo(() => pathname || '/', [pathname]);
-
-  // Hide on public pages
-  if (nowPath === '/' || nowPath === '/sign-in') return null;
+  const hide = nowPath === '/' || nowPath === '/sign-in';
 
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
@@ -65,12 +45,12 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const [isTyping, setIsTyping] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Compose localized welcome AFTER we fetch profile/name
+  // Welcome message using profile name only
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      const displayName = await fetchDisplayName(email);
+      const displayName = await getProfileName();
 
       const welcomeMap: Record<Lang, string> = {
         en: `Hey ${displayName}! I'm Zola — your Zolarus assistant.\n\nI help you explore gifts, set reminders, and find the best deals across stores. Ready to discover something meaningful?`,
@@ -80,7 +60,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       };
 
       if (cancelled) return;
-
       const full = welcomeMap[lang];
       setIsTyping(true);
       setMsgs([{ role: 'bot', text: '' }]);
@@ -99,7 +78,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     return () => {
       cancelled = true;
     };
-  }, [lang, email]);
+  }, [lang]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -125,7 +104,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       en: 'The Shop opens with your filters. Fill **for/occasion/keywords/budget** and click **Get ideas**.',
       pt: 'A Loja abre com seus filtros. Preencha **para/ocasião/palavras-chave/orçamento** e clique em **Ver ideias**.',
       es: 'La Tienda se abre con tus filtros. Completa **para/ocasión/palabras clave/presupuesto** y pulsa **Ver ideas**.',
-      fr: 'La Boutique s'ouvre avec vos filtres. Renseignez **pour/occasion/mots-clés/budget** puis cliquez sur **Trouver des idées**.',
+      fr: 'La Boutique s\'ouvre avec vos filtres. Renseignez **pour/occasion/mots-clés/budget** puis cliquez sur **Trouver des idées**.',
     },
     explainReminder: {
       en: 'Type a **Title**, pick a date/time, then **Save reminder**. Zolarus will email you right on time.',
@@ -133,21 +112,20 @@ export default function ChatWidget({ email }: { email?: string | null }) {
       es: 'Escribe un **Título**, elige fecha/hora y **Guarda el recordatorio**. Zolarus te avisará a tiempo.',
       fr: 'Saisissez un **Titre**, choisissez une date/heure puis **Enregistrez le rappel**. Zolarus vous préviendra à temps.',
     },
-  };
+  } as const;
 
   function answerFor(qRaw: string) {
     const q = qRaw.toLowerCase().trim();
-    if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil/.test(q)) {
+    if (/why.*profile|por que.*perfil|¿por.*perfil|pourquoi.*profil/.test(q))
       return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
-    }
-    if (/why.*referr|por que.*indica|¿por.*referenc|pourquoi.*parrain/.test(q)) {
+    if (/why.*referr|por que.*indica|¿por.*referenc|pourquoi.*parrain/.test(q))
       return { reply: replies.explainRefs[lang], nav: '/referrals' };
-    }
-    if (/reminder|lembrete|recordatorio|rappel/.test(q)) return { reply: replies.explainReminder[lang], nav: '/reminders' };
-    if (/profile|perfil|profil/.test(q)) return { reply: replies.explainProfileWhy[lang], nav: '/profile' };
-    if (/shop|loja|tienda|boutique/.test(q)) return { reply: replies.explainShop[lang], nav: '/shop' };
-    if (/referr|indica|referenc|parrain/.test(q)) return { reply: replies.explainRefs[lang], nav: '/referrals' };
-    if (/dashboard|home|painel|panel|tableau/.test(q)) return { reply: 'Back to Dashboard…', nav: '/dashboard' };
+    if (/reminder|lembrete|recordatorio|rappel/.test(q))
+      return { reply: replies.explainReminder[lang], nav: '/reminders' };
+    if (/shop|loja|tienda|boutique/.test(q))
+      return { reply: replies.explainShop[lang], nav: '/shop' };
+    if (/dashboard|home|painel|panel|tableau/.test(q))
+      return { reply: 'Back to Dashboard…', nav: '/dashboard' };
     return { reply: 'Try asking "why complete my profile?", "why referrals?", or "open reminders".' };
   }
 
@@ -173,7 +151,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
     if (nav) setTimeout(() => go(nav), 400);
   }
 
-  if (!open)
+  if (hide || !open) {
     return (
       <button
         aria-label="Open Zolarus Assistant"
@@ -196,6 +174,7 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         💬
       </button>
     );
+  }
 
   return (
     <div
@@ -215,7 +194,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         zIndex: 50,
       }}
     >
-      {/* header */}
       <div
         style={{
           padding: '10px 12px',
@@ -239,7 +217,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         </button>
       </div>
 
-      {/* messages */}
       <div
         ref={listRef}
         style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}
@@ -273,7 +250,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         ))}
       </div>
 
-      {/* quick suggestions */}
       {showChips ? (
         <div
           style={{
@@ -358,7 +334,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
         </div>
       )}
 
-      {/* input */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
