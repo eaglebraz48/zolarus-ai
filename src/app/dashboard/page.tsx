@@ -246,7 +246,51 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
-    {/* Decorative background + badge */}
+      {/* Decorative background circles */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        {/* Left circle */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '6%',
+            top: 130,
+            width: 400,
+            height: 400,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
+            boxShadow:
+              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            filter: 'saturate(0.88)',
+          }}
+        />
+        {/* Right circle */}
+        <div
+          style={{
+            position: 'absolute',
+            right: '4%',
+            top: 130,
+            width: 400,
+            height: 400,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(60% 60% at 50% 50%, rgba(14,165,233,0.10), rgba(14,165,233,0.04) 60%, transparent 70%)',
+            boxShadow:
+              '0 0 0 1px rgba(14,165,233,0.12), inset 0 0 60px rgba(14,165,233,0.10)',
+            filter: 'saturate(0.88)',
+          }}
+        />
+      </div>
+
+      {/* Badge */}
       <SoonBadge lang={lang} />
 
       <div
