@@ -220,7 +220,6 @@ function DashboardContent() {
   const t = L[lang];
 
   const [email, setEmail] = React.useState<string | null>(null);
-  const [referralCount, setReferralCount] = React.useState<number>(0);
 
   const shareUrl =
     typeof window !== 'undefined'
@@ -233,16 +232,6 @@ function DashboardContent() {
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       if (mounted) setEmail(user?.email ?? null);
-
-      if (user?.id) {
-        const { count } = await supabase
-          .from('referrals')
-          .select('*', { count: 'exact', head: true })
-          .eq('referrer_id', user.id);
-        if (mounted) setReferralCount(count ?? 0);
-      } else {
-        setReferralCount(0);
-      }
     })();
     return () => {
       mounted = false;
@@ -400,109 +389,7 @@ function DashboardContent() {
       </div>
 
       {/* ✅ Chat auto-mount */}
-      <ChatWidget openOnMount />
-    </div>
-  );
-}
-
-/* ---------------------- Client-only viewport + Badge ---------------------- */
-function useViewport() {
-  const [vw, setVw] = React.useState<number | null>(null);
-
-  React.useEffect(() => {
-    const set = () => setVw(window.innerWidth);
-    set();
-    window.addEventListener('resize', set);
-    return () => window.removeEventListener('resize', set);
-  }, []);
-
-  return vw;
-}
-
-function SoonBadge({ lang }: { lang: Lang }) {
-  const vw = useViewport();
-  if (vw === null || vw < 740) return null;
-
-  const title =
-    lang === 'pt'
-      ? 'Zolarus Brasil'
-      : lang === 'es'
-      ? 'Zolarus Internacional'
-      : 'Zolarus International';
-
-  const soon =
-    lang === 'pt'
-      ? 'em breve'
-      : lang === 'es'
-      ? 'muy pronto'
-      : lang === 'fr'
-      ? 'bientôt'
-      : 'coming soon';
-
-  const size = vw >= 900 ? 140 : 120;
-  const top = vw >= 900 ? 205 : 240;
-  const left = vw >= 900 ? '27%' : '20%';
-
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: 'absolute',
-        top,
-        left,
-        width: size,
-        height: size,
-        borderRadius: '9999px',
-        background: 'linear-gradient(180deg,#22c55e,#16a34a)',
-        boxShadow:
-          '0 18px 50px rgba(34,197,94,0.30), 0 0 0 8px rgba(34,197,94,0.12), inset 0 -8px 18px rgba(0,0,0,0.12)',
-        color: '#fff',
-        display: 'grid',
-        placeItems: 'center',
-        textAlign: 'center',
-        padding: 10,
-        zIndex: 2,
-        pointerEvents: 'none',
-      }}
-      title={`${title} — ${soon}`}
-    >
-      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>{title}</div>
-      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
-        {soon}
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------- tiny UI helpers -------------------------- */
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        border: '1px solid rgba(14,165,233,0.26)',
-        borderRadius: 14,
-        padding: 16,
-        background: '#fff',
-        boxShadow: '0 2px 0 rgba(2,6,23,0.02), 0 10px 28px rgba(2,6,23,0.06)',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CardTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontWeight: 800,
-        fontSize: 17,
-        marginBottom: 10,
-        color: '#0f172a',
-        letterSpacing: '0.1px',
-      }}
-    >
-      {children}
+      <ChatWidget />
     </div>
   );
 }
