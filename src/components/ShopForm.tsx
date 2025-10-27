@@ -125,7 +125,6 @@ export default function ShopForm({
             autoCapitalize="sentences"
             autoCorrect="on"
             inputMode="text"
-            enterKeyHint="done"
             autoComplete="on"
           />
         </label>

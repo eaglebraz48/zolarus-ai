@@ -364,14 +364,12 @@ export default function ShopPage() {
 
   // Commit and open Amazon
   function openIdeas() {
-    // Commit the current draft to the page state
     setCForWhom(forWhom);
     setCOccasion(occasion);
     setCKeywords(keywords);
     setCMin(min);
     setCMax(max);
 
-    // Build the URL from the draft we just committed (same values)
     const nf = normalizeToEnglish(forWhom, lang);
     const no = normalizeToEnglish(occasion, lang);
     const nk = normalizeToEnglish(keywords, lang);
@@ -383,16 +381,22 @@ export default function ShopPage() {
       max: max || undefined,
     });
 
-    // Open in a new tab without interrupting the input focus flow
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   function refreshIdeas() {
-    // Clear both draft and committed; reset URL once
     setForWhom(''); setOccasion(''); setKeywords(''); setMin(''); setMax('');
     setCForWhom(''); setCOccasion(''); setCKeywords(''); setCMin(''); setCMax('');
     router.push(withLang('/shop?fresh=1'));
   }
+
+  // helper to keep focused field clear of the keyboard/QuickType bar
+  const focusIntoView = (e: React.FocusEvent<HTMLInputElement>) => {
+    // small delay helps iOS compute the new viewport height after keyboard opens
+    setTimeout(() => {
+      e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 60);
+  };
 
   return (
     <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
@@ -426,30 +430,40 @@ export default function ShopPage() {
         <input
           value={forWhom}
           onChange={(e) => setForWhom(e.target.value)}
+          onFocus={focusIntoView}
+          autoComplete="off"
           placeholder={txt.phFor}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
         <input
           value={occasion}
           onChange={(e) => setOccasion(e.target.value)}
+          onFocus={focusIntoView}
+          autoComplete="off"
           placeholder={txt.phOccasion}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
         <input
           value={keywords}
           onChange={(e) => setKeywords(e.target.value)}
+          onFocus={focusIntoView}
+          autoComplete="off"
           placeholder={txt.phKeywords}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
         <input
           value={min}
           onChange={(e) => setMin(e.target.value.replace(/\D/g, ''))}
+          onFocus={focusIntoView}
+          autoComplete="off"
           placeholder={txt.phMin}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
         <input
           value={max}
           onChange={(e) => setMax(e.target.value.replace(/\D/g, ''))}
+          onFocus={focusIntoView}
+          autoComplete="off"
           placeholder={txt.phMax}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400"
         />
