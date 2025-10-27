@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import './globals.css';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -12,8 +11,8 @@ import HashAuthBridge from '@/components/HashAuthBridge'; // ← handles #access
 type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: readonly Lang[] = ['en', 'pt', 'es', 'fr'] as const;
 
-async function getLangFromCookies(): Promise<Lang> {
-  const store = await cookies();
+function getLangFromCookies(): Lang {
+  const store = cookies();
   const v = store.get('zola_lang')?.value;
   return v && (LANGS as readonly string[]).includes(v) ? (v as Lang) : 'en';
 }
@@ -27,8 +26,8 @@ export const viewport = {
   themeColor: '#0ea5e9',
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const lang = await getLangFromCookies();
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const lang = getLangFromCookies();
 
   return (
     <html lang={lang}>
