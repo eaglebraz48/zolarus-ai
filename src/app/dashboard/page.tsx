@@ -246,6 +246,7 @@ function DashboardContent() {
 
   return (
     <div style={{ position: 'relative' }}>
+    {/* Decorative background + badge */}
       <SoonBadge lang={lang} />
 
       <div
@@ -388,8 +389,110 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* ✅ Chat auto-mount */}
-      <ChatWidget />
+      {/* ✅ Chat auto-mount with personalization */}
+      <ChatWidget email={email} />
+    </div>
+  );
+}
+
+/* ---------------------- Client-only viewport + Badge ---------------------- */
+function useViewport() {
+  const [vw, setVw] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const set = () => setVw(window.innerWidth);
+    set();
+    window.addEventListener('resize', set);
+    return () => window.removeEventListener('resize', set);
+  }, []);
+
+  return vw;
+}
+
+function SoonBadge({ lang }: { lang: Lang }) {
+  const vw = useViewport();
+  if (vw === null || vw < 740) return null;
+
+  const title =
+    lang === 'pt'
+      ? 'Zolarus Brasil'
+      : lang === 'es'
+      ? 'Zolarus Internacional'
+      : 'Zolarus International';
+
+  const soon =
+    lang === 'pt'
+      ? 'em breve'
+      : lang === 'es'
+      ? 'muy pronto'
+      : lang === 'fr'
+      ? 'bientôt'
+      : 'coming soon';
+
+  const size = vw >= 900 ? 140 : 120;
+  const top = vw >= 900 ? 205 : 240;
+  const left = vw >= 900 ? '27%' : '20%';
+
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute',
+        top,
+        left,
+        width: size,
+        height: size,
+        borderRadius: '9999px',
+        background: 'linear-gradient(180deg,#22c55e,#16a34a)',
+        boxShadow:
+          '0 18px 50px rgba(34,197,94,0.30), 0 0 0 8px rgba(34,197,94,0.12), inset 0 -8px 18px rgba(0,0,0,0.12)',
+        color: '#fff',
+        display: 'grid',
+        placeItems: 'center',
+        textAlign: 'center',
+        padding: 10,
+        zIndex: 2,
+        pointerEvents: 'none',
+      }}
+      title={`${title} — ${soon}`}
+    >
+      <div style={{ lineHeight: 1.1, fontWeight: 800, fontSize: 16 }}>{title}</div>
+      <div style={{ marginTop: 6, fontWeight: 700, fontSize: 12, opacity: 0.95 }}>
+        {soon}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------- tiny UI helpers -------------------------- */
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        border: '1px solid rgba(14,165,233,0.26)',
+        borderRadius: 14,
+        padding: 16,
+        background: '#fff',
+        boxShadow: '0 2px 0 rgba(2,6,23,0.02), 0 10px 28px rgba(2,6,23,0.06)',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CardTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontWeight: 800,
+        fontSize: 17,
+        marginBottom: 10,
+        color: '#0f172a',
+        letterSpacing: '0.1px',
+      }}
+    >
+      {children}
     </div>
   );
 }
