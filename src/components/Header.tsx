@@ -1,4 +1,3 @@
-// src/components/header.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -30,7 +29,6 @@ export default function Header({ lang }: { lang: Lang }) {
 
   const [authed, setAuthed] = useState<boolean | null>(null);
 
-  // Track Supabase auth state
   useEffect(() => {
     let on = true;
 
@@ -51,20 +49,17 @@ export default function Header({ lang }: { lang: Lang }) {
 
   const hideProtected = pathname === '/' || pathname?.startsWith('/sign-in');
 
-  // Always append the server-provided lang to links
   const withLang = (href: string) => {
     const url = new URL(href, 'http://x');
     if (!url.searchParams.get('lang')) url.searchParams.set('lang', lang);
     return url.pathname + (url.search || '');
   };
 
-  // Change language: set cookie, update URL (full reload avoids SSR/CSR drift)
   const handleLangChange = (next: Lang) => {
     if (next === lang) return;
     setLangCookie(next);
     const cur = new URL(window.location.href);
     cur.searchParams.set('lang', next);
-    // Force a full reload so the server renders with the new cookie/lang
     window.location.href = cur.pathname + (cur.search || '');
   };
 
@@ -74,7 +69,7 @@ export default function Header({ lang }: { lang: Lang }) {
   };
 
   return (
-    <header style={{ borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
+    <header style={{ borderBottom: '1px solid #e5e7eb', background: '#ffffff' }}>
       <nav
         style={{
           maxWidth: 1200,
@@ -98,7 +93,7 @@ export default function Header({ lang }: { lang: Lang }) {
               </Link>
 
               <Link href={withLang('/shop')} style={{ ...navLink, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BagIcon size={18}  />
+                <BagIcon size={18} />
                 <span>{LABELS.shop[lang]}</span>
               </Link>
 
@@ -126,27 +121,34 @@ export default function Header({ lang }: { lang: Lang }) {
             </Link>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontWeight: 700 }}>Language</span>
-            <select
-              value={lang}
-              onChange={(e) => handleLangChange(e.target.value as Lang)}
-              style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff' }}
-              aria-label="Language"
-            >
-              <option value="en">English</option>
-              <option value="pt">Português</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-            </select>
-          </div>
+          {/* LANGUAGE SELECT (White box + black text) */}
+          <select
+            value={lang}
+            onChange={(e) => handleLangChange(e.target.value as Lang)}
+            style={selectLang}
+          >
+            <option value="en">English</option>
+            <option value="pt">Português</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+          </select>
         </div>
       </nav>
+
+      {/* Style to make dropdown options white */}
+      <style jsx global>{`
+        select option {
+          background: #ffffff;
+          color: #111111;
+          font-weight: 600;
+        }
+      `}</style>
     </header>
   );
 }
 
 /* ---------- styles ---------- */
+
 const navLink: React.CSSProperties = {
   color: '#1f2937',
   textDecoration: 'none',
@@ -158,18 +160,28 @@ const signInBtn: React.CSSProperties = {
   backgroundColor: '#111827',
   color: '#fff',
   borderRadius: 8,
-  padding: '8px 12px',
+  padding: '8px 14px',
   textDecoration: 'none',
   fontWeight: 700,
 };
 
 const signOutBtn: React.CSSProperties = {
   marginLeft: 8,
-  backgroundColor: '#111827',
+  backgroundColor: '#e63946',
   color: '#fff',
   borderRadius: 8,
-  padding: '8px 12px',
+  padding: '8px 14px',
   fontWeight: 700,
   border: 'none',
   cursor: 'pointer',
+};
+
+const selectLang: React.CSSProperties = {
+  padding: '8px 10px',
+  borderRadius: 8,
+  background: '#ffffff',
+  color: '#111111',
+  border: '1px solid #d1d5db',
+  cursor: 'pointer',
+  fontWeight: 600,
 };
