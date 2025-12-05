@@ -7,8 +7,11 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-type Lang = 'en' | 'pt' | 'es' | 'fr';   // ✅ ESTA LINHA É O QUE FALTAVA
+// ---------------- LANGUAGE SETUP ----------------
+
+type Lang = 'en' | 'pt' | 'es' | 'fr';
 const LANGS: Lang[] = ['en', 'pt', 'es', 'fr'];
+
 const L: Record<Lang, any> = {
   en: {
     header: 'Dashboard',
@@ -30,7 +33,8 @@ const L: Record<Lang, any> = {
     referralLabel: 'Your referral link',
     copy: 'Copy',
     basicInfo: 'Basic info',
-    remindersBlurb: "Set reminders for special occasions and we'll email you on time.",
+    remindersBlurb:
+      "Set reminders for special occasions and we'll email you on time.",
     referTeaser: 'Start referring today — share the app link below',
     referralsCircle: 'Referrals',
     share: 'Share',
@@ -116,55 +120,54 @@ const L: Record<Lang, any> = {
     remindersBlurb:
       'Créez des rappels pour les dates importantes et nous vous enverrons un e-mail à temps.',
     referTeaser:
-      'Commencez à parrainer dès maintenant — partagez le lien de l’app ci-dessous',
+      "Commencez à parrainer dès maintenant — partagez le lien de l’app ci-dessous",
     referralsCircle: 'Parrainages',
     share: 'Partager',
     copied: 'Copié',
   },
 };
 
+// ---------------- START COMPONENT ----------------
 
-// --------------------------
-// Auth guard (reviewer + normal users)
-// --------------------------
-React.useEffect(() => {
-  let mounted = true;
-
-  (async () => {
-    try {
-      if (!mounted) return;
-
-      // 🔥 NEW LOGIC:
-      // Reviewer should ONLY bypass if login form has validated
-      const reviewer = localStorage.getItem("reviewer_mode");
-
-      if (reviewer === "true") {
-        // reviewer explicitly logged in → allow access
-        return;
-      }
-
-      // 🔐 Normal users → require Supabase session
-      const { data } = await supabase.auth.getSession();
-
-      if (!data?.session) {
-        window.location.href = "/sign-in";
-        return;
-      }
-
-    } catch (err) {
-      if (mounted) {
-        window.location.href = "/sign-in";
-      }
-    }
-  })();
-
-  return () => {
-    mounted = false;
-  };
-}, []);
-
+export default function DashboardClient() {
+  const search = useSearchParams();
+  const lang = (search?.get("lang") as Lang) || "en";
+  const t = L[lang];
 
   // --------------------------
+  // Auth guard (reviewer + normal users)
+  // --------------------------
+  React.useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        if (!mounted) return;
+
+        const reviewer = localStorage.getItem("reviewer_mode");
+
+        if (reviewer === "true") {
+          return;
+        }
+
+        const { data } = await supabase.auth.getSession();
+
+        if (!data?.session) {
+          window.location.href = "/sign-in";
+          return;
+        }
+
+      } catch (err) {
+        if (mounted) {
+          window.location.href = "/sign-in";
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
   const [profileName, setProfileName] = React.useState<string | null>(null);
@@ -185,7 +188,6 @@ React.useEffect(() => {
         if (!mountedFlag) return;
         setUserEmail(user?.email ?? null);
 
-        // attempt to fetch profile (profiles table)
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, display_name')
@@ -197,7 +199,6 @@ React.useEffect(() => {
           profile?.display_name ?? profile?.full_name ?? user?.email ?? null
         );
       } catch (err) {
-        // ignore — keep UI simple
       } finally {
         if (mountedFlag) setLoadingProfile(false);
       }
@@ -210,7 +211,6 @@ React.useEffect(() => {
     };
   }, []);
 
-  // compute referral on client only
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -228,12 +228,9 @@ React.useEffect(() => {
       await navigator.clipboard.writeText(referral);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // localized "Zolarus International / Brasil / ..." label
   const internationalLabel = React.useMemo(() => {
     if (lang === 'pt') return 'Zolarus Brasil';
     if (lang === 'es') return 'Zolarus Internacional';
@@ -243,7 +240,6 @@ React.useEffect(() => {
 
   return (
     <div style={{ padding: 24, maxWidth: 1080, margin: '0 auto' }}>
-      {/* keep disclaimer component — its internal logic determines show/remember */}
       <DisclaimerModal termsVersion="2025-10-29" />
 
       <h2
@@ -303,109 +299,105 @@ React.useEffect(() => {
         <div style={{ ...cardStyle(), width: '100%' }}>
           <h3 style={{ margin: 0, color: '#fff' }}>{t.shopTitle}</h3>
 
-       {/* Browse / Shop now - vivid amazon-ish orange */}
-<div style={{ marginTop: 8 }}>
-  <Link
-    href={`/shop?lang=${lang}`}
-    style={{
-      display: 'inline-block',
-      padding: '8px 14px',
-      borderRadius: 8,
-      background: 'linear-gradient(180deg,#ff9900,#e07a00)',
-      color: '#111',
-      fontWeight: 700,
-      textDecoration: 'none',
-      boxShadow: '0 6px 18px rgba(224,122,0,0.18)',
-    }}
-  >
-    Browse Now
-  </Link>
-</div>
-
-            <strong
-  style={{
-    display: 'block',
-    marginBottom: 6,
-    color: '#fff',
-  }}
->
-  Compare prices using our AI
-</strong>
-
-<div style={{ color: '#9fb0c8', marginBottom: 10 }}>
-  Compare prices for free
-</div>
-
-<p style={{ color: '#9fb0c8', marginBottom: 12 }}>
-  See price differences across stores instantly — powered by AI.
-</p>
-
-<Link
-  href={`/shop?lang=${lang}`}
-  style={{
-    display: 'inline-block',
-    padding: '8px 14px',
-    borderRadius: 8,
-    background: '#0b72ff',
-    color: '#fff',
-    fontWeight: 700,
-    textDecoration: 'none',
-  }}
-  aria-label="Compare prices"
-  title="Compare prices"
->
-  Compare prices
-</Link>
-
-
-          </div>
-
-          <div style={{ marginTop: 12 }}>
-            {loadingProfile ? (
-              <Link
-  href={`/shop?lang=${lang}`}
-  style={{
-    color: '#cbd5e1',
-    textDecoration: 'underline',
-  }}
->
-  {t.loading}
-</Link>
-
-            ) : null}
-          </div>
-        </div>
-
-        {/* Zola Credits */}
-        <div style={{ ...cardStyle(), width: '100%' }}>
-          <h3 style={{ margin: 0, color: '#fff' }}>{t.zolaCredits}</h3>
-          <p style={{ color: '#7b8794' }}>
-            {t.comingSoon}{' '}
-            <span
+          {/* Browse / Shop now */}
+          <div style={{ marginTop: 8 }}>
+            <Link
+              href={`/shop?lang=${lang}`}
               style={{
-                color: '#7ee787',
+                display: 'inline-block',
+                padding: '8px 14px',
+                borderRadius: 8,
+                background: 'linear-gradient(180deg,#ff9900,#e07a00)',
+                color: '#111',
                 fontWeight: 700,
+                textDecoration: 'none',
+                boxShadow: '0 6px 18px rgba(224,122,0,0.18)',
               }}
             >
-              {t.referTeaser}
-            </span>
+              Browse Now
+            </Link>
+          </div>
+
+          <strong
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              color: '#fff',
+            }}
+          >
+            Compare prices using our AI
+          </strong>
+
+          <div style={{ color: '#9fb0c8', marginBottom: 10 }}>
+            Compare prices for free
+          </div>
+
+          <p style={{ color: '#9fb0c8', marginBottom: 12 }}>
+            See price differences across stores instantly — powered by AI.
           </p>
+
+          <Link
+            href={`/shop?lang=${lang}`}
+            style={{
+              display: 'inline-block',
+              padding: '8px 14px',
+              borderRadius: 8,
+              background: '#0b72ff',
+              color: '#fff',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+            aria-label="Compare prices"
+            title="Compare prices"
+          >
+            Compare prices
+          </Link>
         </div>
 
-    {/* Empty placeholder to keep grid symmetric (if needed) */}
-<div style={{ width: '100%', visibility: 'hidden' }} />
+        <div style={{ marginTop: 12 }}>
+          {loadingProfile ? (
+            <Link
+              href={`/shop?lang=${lang}`}
+              style={{
+                color: '#cbd5e1',
+                textDecoration: 'underline',
+              }}
+            >
+              {t.loading}
+            </Link>
+          ) : null}
+        </div>
+      </div>
 
-{/* Bottom centered circles + referral */}
-<div
-  style={{
-    marginTop: 30,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 18,
-  }}
->
+      {/* Zola Credits */}
+      <div style={{ ...cardStyle(), width: '100%' }}>
+        <h3 style={{ margin: 0, color: '#fff' }}>{t.zolaCredits}</h3>
+        <p style={{ color: '#7b8794' }}>
+          {t.comingSoon}{' '}
+          <span
+            style={{
+              color: '#7ee787',
+              fontWeight: 700,
+            }}
+          >
+            {t.referTeaser}
+          </span>
+        </p>
+      </div>
 
+      {/* Empty placeholder */}
+      <div style={{ width: '100%', visibility: 'hidden' }} />
+
+      {/* Bottom centered circles + referral */}
+      <div
+        style={{
+          marginTop: 30,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 18,
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -445,29 +437,28 @@ React.useEffect(() => {
           </div>
 
           <Link
-  href={`/referrals?lang=${lang}`}
-  style={{
-    width: 100,
-    height: 100,
-    borderRadius: '50%',
-    background:
-      'radial-gradient(circle at 30% 30%, #7c3aed 0%, #5b21b6 40%, #3b0f73 100%)',
-    boxShadow:
-      '0 12px 30px rgba(124,58,237,0.14), inset 0 -6px 20px rgba(0,0,0,0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontWeight: 700,
-    textAlign: 'center',
-    textDecoration: 'none',
-  }}
-  aria-label={t.referralsCircle}
-  title={t.referralsCircle}
->
-  {t.referralsCircle}
-</Link>
-
+            href={`/referrals?lang=${lang}`}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle at 30% 30%, #7c3aed 0%, #5b21b6 40%, #3b0f73 100%)',
+              boxShadow:
+                '0 12px 30px rgba(124,58,237,0.14), inset 0 -6px 20px rgba(0,0,0,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 700,
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+            aria-label={t.referralsCircle}
+            title={t.referralsCircle}
+          >
+            {t.referralsCircle}
+          </Link>
         </div>
 
         {/* Referral link row */}
