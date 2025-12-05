@@ -1,3 +1,14 @@
+// src/app/dashboard/DashboardClient.tsx
+'use client';
+
+import * as React from 'react';
+import DisclaimerModal from '@/components/DisclaimerModal';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+type Lang = 'en' | 'pt' | 'es' | 'fr';   // ✅ ESTA LINHA É O QUE FALTAVA
+const LANGS: Lang[] = ['en', 'pt', 'es', 'fr'];
 const L: Record<Lang, any> = {
   en: {
     header: 'Dashboard',
