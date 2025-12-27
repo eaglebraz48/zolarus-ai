@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Scheduled function (every 15 min, UTC)
+[[scheduled.functions]]
+  function = "reminders-cron"
+  cron = "*/15 * * * *"
+
+[build.environment]
+  NODE_VERSION = "20.12.2"
+
+[blobs]
+enabled = false
