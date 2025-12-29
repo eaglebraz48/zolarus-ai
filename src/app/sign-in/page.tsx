@@ -58,8 +58,12 @@ const L: Record<Lang, any> = {
 function PageInner() {
   const sp = useSearchParams();
   const router = useRouter();
+
   const lang = isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en';
   const t = L[lang];
+
+  // 👇 reviewer só aparece se ?reviewer=1
+  const isReviewer = sp.get('reviewer') === '1';
 
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -151,17 +155,22 @@ function PageInner() {
             {t.send}
           </button>
 
-          <input
-            type="password"
-            value={password}
-            placeholder={t.password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={busy}
-          />
+          {/* 👇 REVIEWER PATH (ESCONDIDO POR PADRÃO) */}
+          {isReviewer && (
+            <>
+              <input
+                type="password"
+                value={password}
+                placeholder={t.password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={busy}
+              />
 
-          <button type="button" onClick={reviewerLogin} disabled={busy}>
-            {t.signinpw}
-          </button>
+              <button type="button" onClick={reviewerLogin} disabled={busy}>
+                {t.signinpw}
+              </button>
+            </>
+          )}
 
           <button type="button" onClick={guestLogin} disabled={busy}>
             {t.guest}
