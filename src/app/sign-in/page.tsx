@@ -181,30 +181,31 @@ function PageInner() {
                 disabled={busy}
               />
 
-              <button type="button" onClick={reviewerLogin} disabled={busy}>
+             <button type="button" onClick={reviewerLogin} disabled={busy}>
+
                 {t.signinpw}
               </button>
             </>
           )}
 
           {/* SECONDARY BUTTON */}
-          <button
-            type="button"
-            onClick={guestLogin}
-            disabled={busy}
-            style={{
-              width: 256,
-              padding: '10px',
-              borderRadius: 8,
-              background: 'transparent',
-              color: '#0f172a',
-              border: '1px solid #cbd5e1',
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
-          >
-            {t.guest}
-          </button>
+         <button
+  type="button"
+  onClick={guestLogin}
+  style={{
+    width: 256,
+    padding: '12px 14px',
+    borderRadius: 10,
+    border: '1px solid #e5e7eb',
+    background: 'transparent',
+    color: '#e5e7eb',
+    fontSize: 16,
+    cursor: 'pointer',
+  }}
+>
+  {t.guest}
+</button>
+
         </>
       )}
 
