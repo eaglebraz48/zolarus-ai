@@ -193,15 +193,17 @@ function PageInner() {
   type="button"
   onClick={guestLogin}
   style={{
-    width: 256,
-    padding: '12px 14px',
-    borderRadius: 10,
-    border: '1px solid #e5e7eb',
-    background: 'transparent',
-    color: '#e5e7eb',
-    fontSize: 16,
-    cursor: 'pointer',
-  }}
+  width: 256,
+  padding: '12px 14px',
+  borderRadius: 10,
+  background: 'rgba(255,255,255,0.06)',
+  color: '#ffffff',
+  border: '1px solid rgba(255,255,255,0.15)',
+  fontSize: 16,
+  fontWeight: 600,
+  cursor: 'pointer',
+}}
+
 >
   {t.guest}
 </button>
