@@ -16,7 +16,7 @@ const L: Record<Lang, any> = {
   en: {
     title: 'Sign in',
     email: 'Email',
-    send: 'Send magic link',
+    send: 'Email me a sign-in link',
     back: '← Back to home',
     sent: 'Check your email for the login link!',
     password: 'Password (reviewers only)',
@@ -26,7 +26,7 @@ const L: Record<Lang, any> = {
   pt: {
     title: 'Entrar',
     email: 'Email',
-    send: 'Enviar link mágico',
+    send: 'Envie-me um link de acesso por email',
     back: '← Voltar ao início',
     sent: 'Verifique seu email pelo link!',
     password: 'Senha (somente revisores)',
@@ -36,7 +36,7 @@ const L: Record<Lang, any> = {
   es: {
     title: 'Iniciar sesión',
     email: 'Correo',
-    send: 'Enviar enlace mágico',
+    send: 'Envíame un enlace de acceso por correo',
     back: '← Volver al inicio',
     sent: '¡Revisa tu correo para el enlace!',
     password: 'Contraseña (solo revisores)',
@@ -46,7 +46,7 @@ const L: Record<Lang, any> = {
   fr: {
     title: 'Se connecter',
     email: 'Email',
-    send: 'Envoyer le lien magique',
+    send: 'Envoyez-moi un lien de connexion par e-mail',
     back: '← Retour à l’accueil',
     sent: 'Vérifiez votre email pour le lien!',
     password: 'Mot de passe (examinateurs)',
