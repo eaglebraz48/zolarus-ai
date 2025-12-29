@@ -62,7 +62,6 @@ function PageInner() {
   const lang = isLang(sp.get('lang')) ? (sp.get('lang') as Lang) : 'en';
   const t = L[lang];
 
-  // 👇 reviewer só aparece se ?reviewer=1
   const isReviewer = sp.get('reviewer') === '1';
 
   const [email, setEmail] = React.useState('');
@@ -151,11 +150,27 @@ function PageInner() {
             }}
           />
 
-          <button type="button" onClick={sendMagicLink} disabled={busy}>
+          {/* PRIMARY BUTTON */}
+          <button
+            type="button"
+            onClick={sendMagicLink}
+            disabled={busy}
+            style={{
+              width: 256,
+              padding: '12px',
+              borderRadius: 8,
+              background: '#0f172a',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: 15,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
             {t.send}
           </button>
 
-          {/* 👇 REVIEWER PATH (ESCONDIDO POR PADRÃO) */}
+          {/* REVIEWER (HIDDEN BY DEFAULT) */}
           {isReviewer && (
             <>
               <input
@@ -172,7 +187,22 @@ function PageInner() {
             </>
           )}
 
-          <button type="button" onClick={guestLogin} disabled={busy}>
+          {/* SECONDARY BUTTON */}
+          <button
+            type="button"
+            onClick={guestLogin}
+            disabled={busy}
+            style={{
+              width: 256,
+              padding: '10px',
+              borderRadius: 8,
+              background: 'transparent',
+              color: '#0f172a',
+              border: '1px solid #cbd5e1',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
             {t.guest}
           </button>
         </>
