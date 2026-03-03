@@ -23,7 +23,7 @@ export async function GET() {
     if (!r.email) continue;
 
     await sendReminderEmail(r.email, r.title || 'Reminder', r.remind_at);
-
+await new Promise(res => setTimeout(res, 700));
     await supabase
       .from('reminders')
       .update({ sent_at: new Date().toISOString() })

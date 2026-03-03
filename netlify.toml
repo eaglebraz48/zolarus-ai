@@ -6,10 +6,9 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
-# Scheduled function (every 15 min, UTC)
 [[scheduled.functions]]
-  function = "reminders-cron"
-  cron = "*/15 * * * *"
+  function = "reminders-check"
+  cron = "*/5 * * * *"
 
 [build.environment]
   NODE_VERSION = "20.12.2"

@@ -1,53 +1,63 @@
 // netlify/functions/reminders-check.mjs
 import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const APP_BASE_URL = process.env.APP_BASE_URL;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-export default async (req, context) => {
+export default async () => {
   const nowISO = new Date().toISOString();
-  
+
   console.log('[reminders-check] Starting at:', nowISO);
   console.log('[reminders-check] Env vars present:', {
-    SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    SERVICE_ROLE: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    RESEND_KEY: !!process.env.RESEND_API_KEY
+    SUPABASE_URL: !!SUPABASE_URL,
+    SERVICE_ROLE: !!SERVICE_ROLE,
+    APP_BASE_URL: !!APP_BASE_URL,
   });
+
+  // Hard fail if missing required envs (otherwise you’ll chase ghosts)
+  if (!SUPABASE_URL || !SERVICE_ROLE || !APP_BASE_URL) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: 'Missing required env vars',
+        required: ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'APP_BASE_URL'],
+        time: nowISO,
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 
   try {
     console.log('[reminders-check] Querying reminders...');
-    
+
     const { data: dueReminders, error: queryError } = await supabase
       .from('reminders')
       .select('id, title, remind_at, email, sent_at')
       .lte('remind_at', nowISO)
-      .is('sent_at', null);
+      .is('sent_at', null)
+      .order('remind_at', { ascending: true })
+      .limit(20);
 
     console.log('[reminders-check] Query result:', {
-      error: queryError,
-      count: dueReminders?.length,
-      data: dueReminders
+      error: queryError?.message ?? null,
+      count: dueReminders?.length ?? 0,
     });
 
     if (queryError) {
       console.error('[reminders-check] Query failed:', queryError);
       return new Response(
         JSON.stringify({
+          ok: false,
           error: 'Query failed',
           message: queryError.message,
           processed: 0,
           sent: 0,
-          time: nowISO
+          time: nowISO,
         }),
-        { 
-          status: 500, 
-          headers: { 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -55,15 +65,13 @@ export default async (req, context) => {
       console.log('[reminders-check] No reminders due');
       return new Response(
         JSON.stringify({
+          ok: true,
           message: 'No reminders due',
           processed: 0,
           sent: 0,
-          time: nowISO
+          time: nowISO,
         }),
-        { 
-          status: 200, 
-          headers: { 'Content-Type': 'application/json' } 
-        }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -73,102 +81,106 @@ export default async (req, context) => {
     let sentCount = 0;
 
     for (const r of dueReminders) {
-      console.log(`[reminders-check] Processing reminder: ${r.id}`);
-      
       const item = {
         id: r.id,
-        title: r.title,
-        email: r.email,
-        remind_at: r.remind_at,
-        status: null
+        title: r.title ?? null,
+        email: r.email ?? null,
+        remind_at: r.remind_at ?? null,
+        send_ok: false,
+        send_error: null,
+        update_ok: false,
+        update_error: null,
+        status: null,
       };
+
+      console.log(`[reminders-check] Processing reminder: ${r.id}`);
 
       if (!r.email) {
         item.status = 'SKIP - no email';
         details.push(item);
-        console.log(`[reminders-check] Skipped ${r.id}: no email`);
         continue;
       }
 
+      // 1) Send via your existing Next.js API (/api/send) so you have ONE sender setup
       try {
-        console.log(`[reminders-check] Sending email to ${r.email}`);
-        
-        const send = await resend.emails.send({
-          from: 'Zolarus Reminders <onboarding@resend.dev>',
-          to: r.email,
-          subject: `Reminder: ${r.title ?? '(no title)'}`,
-          html: `<h2>${r.title ?? 'Reminder'}</h2><p>Scheduled: ${new Date(r.remind_at).toISOString()}</p>`
+        const resp = await fetch(`${APP_BASE_URL}/api/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: r.email,
+            subject: `Reminder: ${r.title ?? '(no title)'}`,
+            html: `<h2>${r.title ?? 'Reminder'}</h2><p>Scheduled: ${new Date(r.remind_at).toISOString()}</p>`,
+          }),
         });
 
-        console.log(`[reminders-check] Email sent, response:`, send);
-        item.resend_ok = true;
-        item.resend_response = send;
-      } catch (e) {
-        item.resend_ok = false;
-        item.resend_error = String(e);
-        console.error(`[reminders-check] Email send failed:`, e);
-      }
+        const out = await resp.json().catch(() => ({}));
 
-      if (item.resend_ok) {
-        try {
-          console.log(`[reminders-check] Marking ${r.id} as sent`);
-          
-          const { error: updErr } = await supabase
-            .from('reminders')
-            .update({ sent_at: new Date().toISOString() })
-            .eq('id', r.id);
-
-          if (updErr) {
-            item.update_ok = false;
-            item.update_error = updErr.message;
-            console.error(`[reminders-check] DB update failed:`, updErr);
-          } else {
-            item.update_ok = true;
-            sentCount++;
-            item.status = 'SENT';
-            console.log(`[reminders-check] Successfully marked ${r.id} as sent`);
-          }
-        } catch (updateEx) {
-          item.update_ok = false;
-          item.update_error = String(updateEx);
-          console.error(`[reminders-check] Update exception:`, updateEx);
+        if (!resp.ok || !out?.success) {
+          throw new Error(`api/send failed (${resp.status}): ${JSON.stringify(out)}`);
         }
+
+        item.send_ok = true;
+        item.status = 'SENT_EMAIL';
+        console.log(`[reminders-check] Email sent via /api/send. id=${out?.id ?? 'n/a'}`);
+      } catch (e) {
+        item.send_ok = false;
+        item.send_error = String(e);
+        item.status = 'SEND_FAILED';
+        console.error('[reminders-check] Email send failed:', e);
+        details.push(item);
+        continue; // don’t mark sent_at if email failed
       }
+
+      // 2) Mark as sent (sent_at)
+      try {
+        const sentAt = new Date().toISOString();
+
+        const { error: updErr } = await supabase
+          .from('reminders')
+          .update({ sent_at: sentAt })
+          .eq('id', r.id);
+
+        if (updErr) throw updErr;
+
+        item.update_ok = true;
+        item.status = 'SENT_AND_MARKED';
+        sentCount++;
+        console.log(`[reminders-check] Marked ${r.id} as sent_at=${sentAt}`);
+      } catch (e) {
+        item.update_ok = false;
+        item.update_error = String(e);
+        item.status = 'UPDATE_FAILED';
+        console.error('[reminders-check] DB update failed:', e);
+      }
+
+      // tiny pacing so you don’t blast providers
+      await new Promise((res) => setTimeout(res, 400));
 
       details.push(item);
     }
 
-    const response = {
-      processed: dueReminders.length,
-      sent: sentCount,
-      time: nowISO,
-      details
-    };
-
-    console.log('[reminders-check] Final response:', response);
-
     return new Response(
-      JSON.stringify(response),
-      { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({
+        ok: true,
+        processed: dueReminders.length,
+        sent: sentCount,
+        time: nowISO,
+        details,
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-
   } catch (e) {
     console.error('[reminders-check] Fatal error:', e);
     return new Response(
       JSON.stringify({
+        ok: false,
         error: 'Fatal error',
         message: String(e),
         processed: 0,
         sent: 0,
-        time: nowISO
+        time: nowISO,
       }),
-      { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };
