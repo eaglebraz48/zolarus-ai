@@ -32,7 +32,7 @@ const GREET_WITH_NAME = {
 };
 
 const AFTER_NAME = {
-  en: (name: string) => `Lindo nome, ${name}! Se quiser que eu lembre na próxima vez, é só salvar no seu perfil.`,
+ en: (name: string) => `Nice name, ${name}! If you want me to remember it next time, just save it in your profile.`,
   pt: (name: string) => `Lindo nome, ${name}! Se quiser que eu lembre na próxima vez, é só salvar no seu perfil.`,
   es: (name: string) => `¡Qué nombre bonito, ${name}! Si quieres que lo recuerde la próxima vez, sólo guárdalo en tu perfil.`,
   fr: (name: string) => `Très joli prénom, ${name} ! Si tu veux que je m’en souvienne, enregistre-le dans ton profil.`,
