@@ -23,8 +23,12 @@ function detectLang(): Lang {
   }
 }
 
-export default function ShopCTA({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  const lang = typeof window !== 'undefined' ? detectLang() : 'en';
+export default function ShopCTA({ size = 'md', href, lang: suppliedLang }: {
+  size?: 'sm' | 'md';
+  href?: string;
+  lang?: Lang;
+}) {
+  const lang = suppliedLang ?? (typeof window !== 'undefined' ? detectLang() : 'en');
 
   const common: React.CSSProperties = {
     borderRadius: 8,
@@ -38,13 +42,8 @@ export default function ShopCTA({ size = 'md' }: { size?: 'sm' | 'md' }) {
     color: '#fff',
   };
 
-  function go(e: React.MouseEvent) {
-    e.preventDefault();
-    window.location.href = `/compare?lang=${lang}`;
-  }
-
   return (
-    <a href="#" onClick={go} style={common}>
+    <a href={href ?? `/compare?${new URLSearchParams({ lang }).toString()}`} style={common}>
       {TXT[lang].open}
     </a>
   );

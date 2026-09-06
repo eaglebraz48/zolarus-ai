@@ -77,7 +77,8 @@ function PageInner() {
 
     setBusy(true);
     try {
-      const redirectTarget = encodeURIComponent(`/dashboard?lang=${lang}`);
+      const redirectParam = sp.get('redirect');
+      const redirectTarget = encodeURIComponent(redirectParam || `/dashboard?lang=${lang}`);
 
       const res = await fetch('/api/auth/magic-link', {
         method: 'POST',

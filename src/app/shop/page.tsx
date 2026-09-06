@@ -128,23 +128,9 @@ function escapeRegExp(s: string) {
 }
 
 // AMAZON URL
-function buildAmazonUrl(args: {
-  forWhom?: string;
-  occasion?: string;
-  keywords?: string;
-  min?: string;
-  max?: string;
-}) {
+function buildAmazonUrl(keywords: string) {
   const tag = 'mateussousa-20';
-  const parts: string[] = [];
-  if (args.forWhom) parts.push(`for ${args.forWhom}`);
-  if (args.occasion) parts.push(args.occasion);
-  if (args.keywords) parts.push(args.keywords);
-  if (args.min && args.max) parts.push(`price:${args.min}-${args.max}`);
-  else if (args.min && !args.max) parts.push(`price:${args.min}-`);
-  else if (!args.min && args.max) parts.push(`under ${args.max}`);
-
-  const q = encodeURIComponent(parts.join(' ').trim());
+  const q = encodeURIComponent(keywords.trim());
   return `https://www.amazon.com/s?k=${q}&tag=${encodeURIComponent(tag)}`;
 }
 
@@ -211,6 +197,12 @@ export default function ShopPage() {
       fr: "Vous ne savez pas quoi chercher ? Demandez au chat — dites à Zola qui est la personne et ce qu'elle aime, et elle proposera des idées de cadeaux.",
     }),
 
+    emptyKeywords: pick(lang, {
+      en: 'Enter a product, interest, or gift keyword to search.',
+      pt: 'Digite uma palavra-chave de produto, interesse ou presente para buscar.',
+      es: 'Introduce una palabra clave de producto, interés o regalo para buscar.',
+      fr: 'Saisissez un mot-clé de produit, de centre d’intérêt ou de cadeau pour rechercher.',
+    }),
     disclaimer: pick(lang, {
       en: 'Suggestions may vary.',
       pt: 'Sugestões podem variar.',
@@ -220,27 +212,18 @@ export default function ShopPage() {
   };
 
   // STATES
-  const [forWhom, setForWhom] = useState('');
-  const [occasion, setOccasion] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [min, setMin] = useState('');
-  const [max, setMax] = useState('');
+  const [forWhom, setForWhom] = useState(() => sp.get('for') || '');
+  const [occasion, setOccasion] = useState(() => sp.get('occasion') || '');
+  const [keywords, setKeywords] = useState(() => sp.get('keywords') || '');
+  const [min, setMin] = useState(() => sp.get('min') || '');
+  const [max, setMax] = useState(() => sp.get('max') || '');
 
-  const hasFilters = useMemo(
-    () => Boolean(forWhom || occasion || keywords || min || max),
-    [forWhom, occasion, keywords, min, max]
-  );
+  const compareHref = '/compare?' + new URLSearchParams({
+    for: forWhom, occasion, keywords, min, max, lang,
+  }).toString();
 
-  const amazonUrl = useMemo(() => {
-    if (!hasFilters) return '#';
-    return buildAmazonUrl({
-      forWhom: normalizeToEnglish(forWhom, lang),
-      occasion: normalizeToEnglish(occasion, lang),
-      keywords: normalizeToEnglish(keywords, lang),
-      min: min || undefined,
-      max: max || undefined,
-    });
-  }, [hasFilters, forWhom, occasion, keywords, min, max, lang]);
+  const hasKeywords = Boolean(keywords.trim());
+  const amazonUrl = hasKeywords ? buildAmazonUrl(keywords) : undefined;
 
   function refreshIdeas() {
     router.push(withLang('/shop?fresh=1'));
@@ -260,7 +243,7 @@ export default function ShopPage() {
       {/* Compare */}
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <p className="text-slate-200 font-medium">{txt.compare}</p>
-        <ShopCTA size="sm" />
+        <ShopCTA size="sm" href={compareHref} lang={lang} />
       </div>
 
       <p className="mt-1 text-slate-300">{txt.sub}</p>
@@ -279,9 +262,9 @@ export default function ShopPage() {
           className="input" />
 
         <div className="flex gap-2">
-          <a href={hasFilters ? amazonUrl : '#'} target="_blank"
+          <a href={amazonUrl} aria-disabled={!hasKeywords} target="_blank"
             className={`rounded-xl px-4 py-2 font-semibold ${
-              hasFilters ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-200 text-slate-400 pointer-events-none'
+              hasKeywords ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-200 text-slate-400 pointer-events-none'
             }`}>
             {txt.btnIdeas}
           </a>
@@ -292,6 +275,8 @@ export default function ShopPage() {
           </button>
         </div>
       </div>
+
+      {!hasKeywords && <p role="status" className="mt-3 text-slate-300">{txt.emptyKeywords}</p>}
 
       {/* NOTE */}
       <p className="mt-3 text-slate-300">{txt.note}</p>

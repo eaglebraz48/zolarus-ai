@@ -1,6 +1,7 @@
 // /src/app/api/chat/route.ts
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { synthesizeReply } from "@/lib/voice";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,7 +79,7 @@ CLOSING BEHAVIOR:
 
 // helper
 function json(status: number, body: any) {
-  return NextResponse.json(body, { status });
+  return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 export async function GET() {
@@ -90,8 +91,24 @@ export async function POST(req: Request) {
     const key = process.env.OPENAI_API_KEY;
     if (!key) return json(500, { error: "OPENAI_API_KEY missing" });
 
-    const payload = (await req.json()) as { messages?: Msg[] };
-    const messages = payload?.messages ?? [];
+    let payload: any;
+    try {
+      payload = await req.json();
+    } catch {
+      return json(400, { error: "Invalid chat request." });
+    }
+    if (!payload || !Array.isArray(payload.messages) || payload.messages.length === 0 ||
+        payload.messages.length > 100 ||
+        (payload.voiceOutput !== undefined && typeof payload.voiceOutput !== "boolean") ||
+        payload.messages.some((m: unknown) => {
+          if (!m || typeof m !== "object") return true;
+          const message = m as Record<string, unknown>;
+          return (message.role !== "user" && message.role !== "assistant") ||
+            typeof message.content !== "string" || !message.content.trim() || message.content.length > 10000;
+        }) || payload.messages[payload.messages.length - 1].role !== "user") {
+      return json(400, { error: "Invalid chat messages." });
+    }
+    const messages: Msg[] = payload.messages;
 
     const client = new OpenAI({ apiKey: key });
 
@@ -113,9 +130,19 @@ export async function POST(req: Request) {
     });
 
     const reply = completion.choices?.[0]?.message?.content ?? "";
+    if (payload.voiceOutput === true && reply.trim()) {
+      try {
+        const mp3 = await synthesizeReply(reply);
+        return json(200, { reply, audio: { base64: mp3.toString("base64"), mimeType: "audio/mpeg" } });
+      } catch {
+        console.error("Zolarus speech generation failed; text reply preserved.");
+        return json(200, { reply, voiceError: "unavailable" });
+      }
+    }
     return json(200, { reply });
 
-  } catch (err: any) {
-    return json(500, { error: err?.message ?? "unknown error" });
+  } catch {
+    console.error("Zolarus chat request failed.");
+    return json(500, { error: "Chat unavailable. Please try again." });
   }
 }

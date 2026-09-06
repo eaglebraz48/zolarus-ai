@@ -45,6 +45,8 @@ const L = {
     back: "Back to Dashboard",
     banner: "To create reminders, please sign in with your email.",
     signinBtn: "Sign in",
+    signInExplain: "Sign in so Zola can save this reminder and notify you.",
+    readyTitle: "Your reminder is ready",
   },
   pt: {
     title: "Lembretes",
@@ -66,6 +68,8 @@ const L = {
     back: "Voltar ao Painel",
     banner: "Para criar lembretes, faça login com seu email.",
     signinBtn: "Entrar",
+    signInExplain: "Faça login para que a Zola possa salvar este lembrete e avisar você.",
+    readyTitle: "Seu lembrete está pronto",
   },
   es: {
     title: "Recordatorios",
@@ -87,6 +91,8 @@ const L = {
     back: "Volver al Panel",
     banner: "Para crear recordatorios, inicia sesión con tu correo.",
     signinBtn: "Iniciar sesión",
+    signInExplain: "Inicia sesión para que Zola pueda guardar este recordatorio y avisarte.",
+    readyTitle: "Tu recordatorio está listo",
   },
   fr: {
     title: "Rappels",
@@ -108,6 +114,8 @@ const L = {
     back: "Retour au Tableau de bord",
     banner: "Pour créer des rappels, connectez-vous avec votre e-mail.",
     signinBtn: "Se connecter",
+    signInExplain: "Connectez-vous pour que Zola puisse enregistrer ce rappel et vous prévenir.",
+    readyTitle: "Votre rappel est prêt",
   }
 };
 
@@ -140,29 +148,104 @@ function RemindersContent() {
   const [saving, setSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [flash, setFlash] = React.useState<string | null>(null);
+  const [pendingSignIn, setPendingSignIn] = React.useState(false);
 
-  /* LOAD USER & EXISTING REMINDERS */
+  const DRAFT_KEY = "zolarus_pending_reminder";
+
+  const autoSaveInFlight = React.useRef(false);
+  const savedDraft = React.useRef<string | null>(null);
+
+  /* LOAD REMINDERS & RETRY GUEST DRAFT WHEN AUTH IS READY */
   React.useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      const me = data.user;
+    let active = true;
+    let currentUserId: string | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-      if (!me) {
-        setGuestMode(true);
-        return;
+    async function loadReminders(me: { id: string; email?: string }) {
+      if (!active || autoSaveInFlight.current) return;
+      autoSaveInFlight.current = true;
+      const isCurrentUser = () => active && currentUserId === me.id;
+
+      try {
+        const { data: r, error: loadError } = await supabase
+          .from("reminders")
+          .select("*")
+          .eq("user_id", me.id)
+          .order("remind_at", { ascending: true });
+
+        if (!isCurrentUser()) return;
+        if (!loadError) setRows((r as Row[]) || []);
+        else console.error("Could not load reminders.");
+
+        const draftRaw = localStorage.getItem(DRAFT_KEY);
+        if (!draftRaw || savedDraft.current === draftRaw) return;
+        const draft = JSON.parse(draftRaw) as {
+          title: string;
+          whoFor: string;
+          remind_at: string;
+        };
+
+        const { data: saved, error } = await supabase
+          .from("reminders")
+          .insert([
+            {
+              user_id: me.id,
+              email: me.email || null,
+              title: draft.title,
+              who_for: draft.whoFor,
+              remind_at: draft.remind_at,
+            },
+          ])
+          .select("*")
+          .single();
+
+        if (error || !saved) {
+          console.error("Guest reminder auto-save failed; draft retained. Retry on the next authenticated session event or reload.");
+          return;
+        }
+
+        // Remember success even if browser storage cleanup fails.
+        savedDraft.current = draftRaw;
+        if (isCurrentUser()) {
+          setRows((prev) => prev.some((row) => row.id === saved.id) ? prev : [...prev, saved as Row]);
+          setPendingSignIn(false);
+          setFlash(t.saved);
+          setTimeout(() => { if (isCurrentUser()) setFlash(null); }, 2000);
+        }
+        try {
+          // Do not clear a newer draft written while this insert was pending.
+          if (localStorage.getItem(DRAFT_KEY) === draftRaw) localStorage.removeItem(DRAFT_KEY);
+        } catch {
+          console.error("Guest reminder saved, but local draft cleanup failed.");
+        }
+      } catch {
+        console.error("Guest reminder auto-save could not complete; draft retained. Check storage availability and draft format, then reload to retry.");
+      } finally {
+        autoSaveInFlight.current = false;
       }
+    }
 
-      setUserId(me.id);
-      setUserEmail(me.email || null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      const me = session?.user;
+      currentUserId = me?.id || null;
+      setUserId(currentUserId);
+      setUserEmail(me?.email || null);
+      setGuestMode(!me);
+      clearTimeout(timer);
+      if (me) {
+        // INITIAL_SESSION covers existing sessions; later events cover delayed sign-in.
+        // Keep Supabase queries outside the auth callback's session lock.
+        timer = setTimeout(() => { void loadReminders(me); }, 0);
+      }
+    });
 
-      const { data: r } = await supabase
-        .from("reminders")
-        .select("*")
-        .eq("user_id", me.id)
-        .order("remind_at", { ascending: true });
-
-      setRows((r as Row[]) || []);
-    })();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const withLang = (href: string) => {
@@ -188,6 +271,21 @@ function RemindersContent() {
     }
 
     const iso = new Date(`${date}T${time}:00`).toISOString();
+
+    // Guests can fill out the reminder, but saving/notifying requires an account.
+    if (guestMode) {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({ title: title.trim(), whoFor: whoFor.trim(), remind_at: iso })
+        );
+      } catch {
+        // storage unavailable — still show the sign-in prompt
+      }
+      setPendingSignIn(true);
+      return;
+    }
+
     setSaving(true);
 
     const { data, error } = await supabase
@@ -247,51 +345,86 @@ function RemindersContent() {
           border: "1px solid #ddd",
           borderRadius: 10,
           padding: 16,
-          background: guestMode ? "#eee" : "#fff",
-          opacity: guestMode ? 0.45 : 1,
-          pointerEvents: guestMode ? "none" : "auto",
+          background: "#fff",
           marginBottom: 20,
         }}
       >
         <div style={{ fontWeight: 700 }}>{t.formTitle}</div>
 
-        {/* Title */}
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t.reminderTitle}
-          style={inputStyle}
-        />
+        <div className="mt-2.5 grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Title */}
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t.reminderTitle}
+            style={inputStyle}
+          />
 
-        {/* Who For */}
-        <input
-          value={whoFor}
-          onChange={(e) => setWhoFor(e.target.value)}
-          placeholder={t.whoFor}
-          style={inputStyle}
-        />
+          {/* Who For */}
+          <input
+            value={whoFor}
+            onChange={(e) => setWhoFor(e.target.value)}
+            placeholder={t.whoFor}
+            style={inputStyle}
+          />
 
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          style={inputStyle}
-        />
+          <div className="min-w-0">
+            <label htmlFor="reminder-date" className="mb-1 block text-sm text-gray-700">
+              {t.date}
+            </label>
+            <input
+              id="reminder-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
 
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          style={inputStyle}
-        />
+          <div className="min-w-0">
+            <label htmlFor="reminder-time" className="mb-1 block text-sm text-gray-700">
+              {t.time}
+            </label>
+            <input
+              id="reminder-time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        </div>
 
-        <button
-          onClick={createReminder}
-          disabled={saving}
-          style={buttonStyle}
-        >
-          {saving ? t.creating : t.create}
-        </button>
+        {!pendingSignIn && (
+          <button
+            onClick={createReminder}
+            disabled={saving}
+            style={buttonStyle}
+          >
+            {saving ? t.creating : t.create}
+          </button>
+        )}
+
+        {pendingSignIn && (
+          <div
+            style={{
+              marginTop: 14,
+              border: "1px solid #ffd8a8",
+              background: "#fff8ef",
+              borderRadius: 10,
+              padding: 14,
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>{t.readyTitle}</div>
+            <div style={{ color: "#555", marginBottom: 10 }}>{t.signInExplain}</div>
+            <Link
+              href={`/sign-in?redirect=${encodeURIComponent(`/reminders?lang=${lang}`)}&lang=${lang}`}
+              style={{ ...buttonStyle, display: "inline-block", textAlign: "center", textDecoration: "none", width: "auto", padding: "10px 20px" }}
+            >
+              {t.signinBtn}
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* LIST */}
@@ -346,11 +479,15 @@ function RemindersContent() {
 
 /* -------------------------------------------------- */
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  maxWidth: "100%",
+  boxSizing: "border-box",
+  minHeight: 44,
   border: "1px solid #ccc",
   borderRadius: 8,
   padding: "10px 12px",
-  marginTop: 10,
 };
 
 const buttonStyle = {

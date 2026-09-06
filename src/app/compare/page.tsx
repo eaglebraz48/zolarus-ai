@@ -26,11 +26,17 @@ const T: Record<
     back: string;
     note: string;
     query: string;
+    context: string;
+    recipient: string;
+    occasion: string;
+    min: string;
+    max: string;
+    emptyKeywords: string;
   }
 > = {
   en: {
     title: 'Price comparison',
-    blurb: 'We’ll open retailer pages with your filters. Pick one below and compare current prices.',
+    blurb: 'We’ll open retailer pages with your keywords. Pick one below and compare current prices.',
     primary: 'Find on Amazon',
     alt1: 'Try Target',
     alt2: 'Try Walmart',
@@ -43,6 +49,8 @@ const T: Record<
     back: 'Back to Shop',
     note: 'Results are based on your keywords; prices and availability can change.',
     query: 'Query:',
+    context: 'Zolarus context', recipient: 'Recipient', occasion: 'Occasion', min: 'Budget min', max: 'Budget max',
+    emptyKeywords: 'Enter a product, interest, or gift keyword in Shop to search.',
   },
   pt: {
     title: 'Comparador de preços',
@@ -59,6 +67,8 @@ const T: Record<
     back: 'Voltar ao Shop',
     note: 'Os resultados usam suas palavras-chave; preços e estoque podem mudar.',
     query: 'Busca:',
+    context: 'Contexto do Zolarus', recipient: 'Destinatário', occasion: 'Ocasião', min: 'Orçamento mín.', max: 'Orçamento máx.',
+    emptyKeywords: 'Digite uma palavra-chave de produto, interesse ou presente na Loja para buscar.',
   },
   es: {
     title: 'Comparación de precios',
@@ -75,6 +85,8 @@ const T: Record<
     back: 'Volver a Shop',
     note: 'Los resultados usan tus palabras clave; los precios pueden cambiar.',
     query: 'Consulta:',
+    context: 'Contexto de Zolarus', recipient: 'Destinatario', occasion: 'Ocasión', min: 'Presupuesto mín.', max: 'Presupuesto máx.',
+    emptyKeywords: 'Introduce una palabra clave de producto, interés o regalo en Tienda para buscar.',
   },
   fr: {
     title: 'Comparateur de prix',
@@ -91,6 +103,8 @@ const T: Record<
     back: 'Retour à Shop',
     note: 'Résultats basés sur vos mots-clés ; prix et stocks évoluent.',
     query: 'Requête :',
+    context: 'Contexte Zolarus', recipient: 'Destinataire', occasion: 'Occasion', min: 'Budget min.', max: 'Budget max.',
+    emptyKeywords: 'Saisissez un mot-clé de produit, de centre d’intérêt ou de cadeau dans Boutique pour rechercher.',
   }
 };
 
@@ -121,17 +135,21 @@ export default function ComparePage() {
   const t = T[lang];
 
   const { who, occ, kw, min, max } = buildQueryParts(sp);
+  // Keep original values for the return trip; retailer query normalization stays separate.
+  const shopParams = new URLSearchParams({ lang });
+  for (const key of ['for', 'occasion', 'keywords', 'min', 'max']) {
+    const value = sp.get(key);
+    if (value !== null) shopParams.set(key, value);
+  }
+  const shopHref = '/shop?' + shopParams.toString();
 
-  // Build final query string
-  const qParts: string[] = [];
-  if (kw) qParts.push(kw);
-  if (who) qParts.push(who);
-  if (occ) qParts.push(occ);
-  if (min && max) qParts.push(`price:${min}-${max}`);
-  if (min && !max) qParts.push(`price:${min}-`);
-  if (!min && max) qParts.push(`under ${max}`);
-
-  const qEn = qParts.join(' ').trim();
+  // Only keywords go to retailers; the remaining fields stay as Zolarus context.
+  const contextDetails = [
+    who && `${t.recipient}: ${who}`,
+    occ && `${t.occasion}: ${occ}`,
+    min && `${t.min}: ${min}`,
+    max && `${t.max}: ${max}`,
+  ].filter(Boolean).join(' · ');
 
   const capsule: React.CSSProperties = {
     display: 'inline-block',
@@ -151,7 +169,7 @@ export default function ComparePage() {
       {/* Back */}
       <div style={{ marginBottom: 12 }}>
   <Link
-    href={`/shop?lang=${lang}`}
+    href={shopHref}
     className="rounded-lg bg-gray-700 px-5 py-3 font-medium text-white hover:bg-gray-600 inline-block"
     style={{ display: 'inline-block' }}
   >
@@ -163,27 +181,31 @@ export default function ComparePage() {
       <h1 style={{ fontWeight: 900, fontSize: 28 }}>{t.title}</h1>
       <p style={{ color: '#374151' }}>{t.blurb}</p>
 
-      {qEn && (
+      {(kw || contextDetails) && (
         <div
           style={{
             background: '#F3F4F6',
+            color: '#111827',
             border: '1px solid #E5E7EB',
             padding: '10px 12px',
             borderRadius: 8,
             margin: '12px 0',
           }}
         >
-          <span style={{ fontWeight: 700, marginRight: 6 }}>{t.query}</span>
-          {qEn}
+          {kw && <div><span style={{ fontWeight: 700, marginRight: 6 }}>{t.query}</span>{kw}</div>}
+          {contextDetails && <div><span style={{ fontWeight: 700, marginRight: 6 }}>{t.context}:</span>{contextDetails}</div>}
         </div>
       )}
+
+      {!kw && <p role="status">{t.emptyKeywords}</p>}
 
       {/* PRIMARY STORES */}
       <div style={{ display: 'grid', gap: 12 }}>
 
         {/* AMAZON AFFILIATE */}
         <a
-          href={`https://www.amazon.com/s?k=${encodeURIComponent(qEn)}&tag=mateussousa-20`}
+          href={kw ? `https://www.amazon.com/s?k=${encodeURIComponent(kw)}&tag=mateussousa-20` : undefined}
+          aria-disabled={!kw}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -196,27 +218,27 @@ export default function ComparePage() {
           {t.primary} 🟧
         </a>
 
-        <a href={targetUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? targetUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#CC0000', color: '#fff', borderColor: '#CC0000' }}>
           {t.alt1} 🎯
         </a>
 
-        <a href={walmartUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? walmartUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#0071CE', color: '#fff', borderColor: '#0071CE' }}>
           {t.alt2} 🔵
         </a>
 
-        <a href={wayfairUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? wayfairUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#6B2A87', color: '#fff', borderColor: '#6B2A87' }}>
           {t.alt3} 🟪
         </a>
 
-        <a href={bestBuyUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? bestBuyUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#0046BE', color: '#fff', borderColor: '#0046BE' }}>
           {t.alt4} 💙
         </a>
 
-        <a href={homeDepotUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? homeDepotUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#F96302', color: '#fff', borderColor: '#F96302' }}>
           {t.alt5} 🧡
         </a>
@@ -227,12 +249,12 @@ export default function ComparePage() {
       {/* MORE STORES */}
       <div style={{ display: 'grid', gap: 12 }}>
 
-        <a href={sheinUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? sheinUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#8E2DE2', color: '#fff', borderColor: '#8E2DE2' }}>
           {t.alt6}
         </a>
 
-        <a href={temuUrl(qEn)} target="_blank" rel="noopener noreferrer"
+        <a href={kw ? temuUrl(kw) : undefined} aria-disabled={!kw} target="_blank" rel="noopener noreferrer"
           style={{ ...capsule, background: '#15C55B', color: '#fff', borderColor: '#15C55B' }}>
           {t.alt7}
         </a>
