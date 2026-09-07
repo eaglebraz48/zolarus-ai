@@ -18,8 +18,6 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   const lang: Lang = (allowed as string[]).includes(langRaw) ? (langRaw as Lang) : 'en';
   const nowPath = useMemo(() => pathname || '/', [pathname]);
 
-  if (nowPath === '/' || nowPath === '/sign-in') return null;
-
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>(() => [
@@ -31,6 +29,8 @@ export default function ChatWidget({ email }: { email?: string | null }) {
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs]);
+
+  if (nowPath === '/' || nowPath === '/sign-in') return null;
 
   const withLang = (path: string) => `${path}${path.includes('?') ? '&' : '?'}lang=${lang}`;
   const go = (path: string) => router.push(withLang(path));
